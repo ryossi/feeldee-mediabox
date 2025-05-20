@@ -1,6 +1,6 @@
 # Feeldee MediaBox
 
-feeldee-mediabox、[Feeldee Framework](https://github.com/ryossi/feeldee-framework)ベースのアプリケーションに簡易的なメディア管理機能を追加するためのLaravelパッケージです。
+feeldee-mediaboxは、[Feeldee Framework](https://github.com/ryossi/feeldee-framework)ベースのアプリケーションに簡易的なメディア管理機能を追加するためのLaravelパッケージです。
 
 ## 利用者
 
