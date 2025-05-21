@@ -37,6 +37,12 @@ class MediaBoxServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'feeldee');
+
+        $this->publishes([
+            __DIR__ . '/../lang' => $this->app->langPath('vendor/feeldee'),
+        ]);
+
         // 追加設定
         $this->publishes([
             __DIR__ . '/../config/feeldee.php' => config_path('feeldee.php'),

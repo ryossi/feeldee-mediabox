@@ -1,0 +1,3 @@
+providers:
+  - Feeldee\Framework\FeeldeeServiceProvider
+  - Feeldee\MediaBox\MediaBoxServiceProvider

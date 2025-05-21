@@ -11,20 +11,37 @@ use Illuminate\Http\UploadedFile;
 use Image;
 use Exception;
 use Carbon\Carbon;
+use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class MediaBox extends Model
 {
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
+
+    protected $fillable = ['user_id', 'directory', 'max_size'];
 
     /**
      * モデルの「起動」メソッド
      */
     protected static function booted(): void
     {
+        static::saving(function (MediaBox $mediaBox) {
+            // メディアボックスルートディレクトリデフォルト
+            if (empty($mediaBox->attributes['directory'])) {
+                $mediaBox->directory = md5($mediaBox->user_id);
+            }
+        });
+
+        static::creating(function (MediaBox $mediaBox) {
+            // メディアボックス存在チェック
+            if (MediaBox::where('user_id', $mediaBox->user_id)->exists()) {
+                throw new ApplicationException(83001, [
+                    'user_id' => $mediaBox->user_id,
+                ]);
+            }
+        });
+
         static::deleted(function (MediaBox $mediaBox) {
             // ディレクトリ削除
             $mediaBox->deleteDirectory();
@@ -61,45 +78,6 @@ class MediaBox extends Model
         return Attribute::make(
             get: fn($value) => Path::combine(self::prefix(), $value),
         );
-    }
-
-    /**
-     * メディアボックスを作成します。
-     * 
-     * ユーザIDが未指定の場合は、 デフォルトでログイン中のユーザのIDを設定します。
-     * 
-     * ディレクトリ未指定の場合は、デフォルトでユーザIDのMD5ハッシュを設定します。
-     * 
-     * @param int|null ユーザID
-     * @param string|null ディレクトリ
-     * @return MediaBox|false 作成が成功した場合は、作成したメディアボックス、失敗した場合はfalse
-     */
-    public static function create(int|null $user_id = null, string|null $directory = null): Self|false
-    {
-        if (empty($user_id)) {
-            // ユーザID未指定の場合
-
-            // ログイン中のユーザのID
-            $user_id = Auth::id();
-        }
-
-        if (empty($directory)) {
-            // ディレクトリ未指定の場合
-
-            // ユーザIDのMD5
-            $directory = md5($user_id);
-        }
-
-        DB::transaction(function () use ($user_id, $directory) {
-            // メディアボックス作成
-            $mediaBox = new Self();
-            $mediaBox->user_id = $user_id;
-            $mediaBox->directory = $directory;
-            $mediaBox->save();
-            return $mediaBox;
-        });
-
-        return false;
     }
 
     /**
