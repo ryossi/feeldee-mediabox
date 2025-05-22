@@ -121,4 +121,39 @@ class MediaBoxTest extends TestCase
             'max_size' => null,
         ]);
     }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - HasMediaBoxトレイトを実装することで、プログラムからユーザが所有するメディアボックスに直接アクセスできるようになることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_mediaBox_user_model()
+    {
+        // 準備
+        $user = new class extends User {
+
+            use \Feeldee\MediaBox\Models\HasMediaBox;
+
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        // 実行
+        $mediaBoxFromUser = $user->mediaBox;
+
+        // 評価
+        $this->assertEquals($mediaBox->id, $mediaBoxFromUser->id, 'プログラムからユーザが所有するメディアボックスに直接アクセスできるようになること');
+    }
 }
