@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a2af2b2fdfccff08e9ddd711531f2c53",
+    "content-hash": "d195320c75dfaa41b643d07fb769910b",
     "packages": [
         {
             "name": "brick/math",
@@ -3282,17 +3282,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ryossi/feeldee-framework.git",
-                "reference": "7616b569f6a6c9fa754aee380f2147c1ada408b1"
+                "reference": "7f0607be0e8b2e6640144d191bc689860b4a6f72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ryossi/feeldee-framework/zipball/7616b569f6a6c9fa754aee380f2147c1ada408b1",
-                "reference": "7616b569f6a6c9fa754aee380f2147c1ada408b1",
+                "url": "https://api.github.com/repos/ryossi/feeldee-framework/zipball/7f0607be0e8b2e6640144d191bc689860b4a6f72",
+                "reference": "7f0607be0e8b2e6640144d191bc689860b4a6f72",
                 "shasum": ""
             },
             "require": {
                 "hashids/hashids": "^5.0",
-                "intervention/image": "^2.7",
                 "laravel/framework": "^10.10",
                 "paquettg/php-html-parser": "^3.1",
                 "php": "^8.2"
@@ -3346,7 +3345,7 @@
                 "source": "https://github.com/ryossi/feeldee-framework",
                 "issues": "https://github.com/ryossi/feeldee-framework/issues"
             },
-            "time": "2025-05-20T02:21:37+00:00"
+            "time": "2025-05-22T01:58:49+00:00"
         },
         {
             "name": "symfony/console",
@@ -6606,16 +6605,16 @@
         },
         {
             "name": "orchestra/sidekick",
-            "version": "v1.2.7",
+            "version": "v1.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchestral/sidekick.git",
-                "reference": "19f19a5780fe78cad76222b364438aad0df65a83"
+                "reference": "4e01680e7109596072f22382626970ba1a2ab92a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchestral/sidekick/zipball/19f19a5780fe78cad76222b364438aad0df65a83",
-                "reference": "19f19a5780fe78cad76222b364438aad0df65a83",
+                "url": "https://api.github.com/repos/orchestral/sidekick/zipball/4e01680e7109596072f22382626970ba1a2ab92a",
+                "reference": "4e01680e7109596072f22382626970ba1a2ab92a",
                 "shasum": ""
             },
             "require": {
@@ -6657,9 +6656,9 @@
             "description": "Packages Toolkit Utilities and Helpers for Laravel",
             "support": {
                 "issues": "https://github.com/orchestral/sidekick/issues",
-                "source": "https://github.com/orchestral/sidekick/tree/v1.2.7"
+                "source": "https://github.com/orchestral/sidekick/tree/v1.2.8"
             },
-            "time": "2025-05-19T03:32:53+00:00"
+            "time": "2025-05-21T11:25:24+00:00"
         },
         {
             "name": "orchestra/testbench",

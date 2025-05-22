@@ -24,6 +24,7 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^10.10",
+        "intervention/image": "^2.0",
         "ryossi/feeldee-framework": "dev-master"
     },
     "require-dev": {

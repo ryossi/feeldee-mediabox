@@ -36,6 +36,14 @@ feeldee-mediaboxは、[Feeldee Framework](https://github.com/ryossi/feeldee-fram
 5. テストコンテナのコマンドプロンプトで`./vendor/bin/phpunit --testsuite Feature`を実行してください。
 6. 最後に`docker compose down`でテストコンテナを終了します。
 
+## 依存パッケージ
+
+以下のサードパーティパッケージに依存しています。
+
+| パッケージ名 | バージョン | ライセンス | 用途 |
+| - | - | - | - |
+| [Intervention Image](https://image.intervention.io/v2) | 2.x | MIT | メディアメディアコンテンツの操作 |
+
 ## ライセンス
 
 このプラグインは、[MIT licence.](https://opensource.org/licenses/MIT)のもとで公開されています。
