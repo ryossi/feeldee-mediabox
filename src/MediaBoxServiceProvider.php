@@ -2,6 +2,7 @@
 
 namespace Feeldee\MediaBox;
 
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,8 +14,8 @@ class MediaBoxServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/feeldee.php',
-            'feeldee'
+            __DIR__ . '/../config/mediabox.php',
+            'mediabox'
         );
     }
 
@@ -37,15 +38,15 @@ class MediaBoxServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // 追加言語ファイル
         $this->loadTranslationsFrom(__DIR__ . '/../lang', 'feeldee');
-
         $this->publishes([
             __DIR__ . '/../lang' => $this->app->langPath('vendor/feeldee'),
         ]);
 
         // 追加設定
         $this->publishes([
-            __DIR__ . '/../config/feeldee.php' => config_path('feeldee.php'),
+            __DIR__ . '/../config/mediabox.php' => config_path('mediabox.php'),
         ]);
 
         // 追加マイグレーション
