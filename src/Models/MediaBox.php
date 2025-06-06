@@ -54,119 +54,79 @@ class MediaBox extends Model
      * コンテンツをメディアボックスにアップロードします。
      * 
      * @param mixed $data コンテンツデータ
-     * @param string $filename ファイル名
-     * @param ?string $subdirectory サブディレクトリ
-     * @param ?string $content_type コンテンツタイプ（デフォルトは、イメージのmime）
+     * @param string|null $filename メディアファイル名（デフォルトは、メディアコンテンツのオリジナルファイル名）
+     * @param string|null $subdirectory メディアサブディレクトリ（デフォルトは、メディアコンテンツアップロード日時のyyyyMMdd形式）
      * @param mixed $uploaded_at アップロード日時（デフォルトは、システム日時）
      * @return Medium メディウム
      */
-    public function upload(mixed $data, string $filename, ?string $subdirectory = null,  ?string $content_type = null, mixed $uploaded_at = null): Medium
+    public function upload(mixed $data, string|null $filename = null, string|null $subdirectory = null,  Carbon|string|null $uploaded_at = null): Medium
     {
         // アップロード日時のデフォルトはシステム日時
         if ($uploaded_at === null) {
             $uploaded_at = Carbon::now();
+        } else if (is_string($uploaded_at)) {
+            // 文字列の場合はCarbonインスタンスに変換
+            $uploaded_at = Carbon::parse($uploaded_at);
         }
 
         // イメージ変換
         $image = Image::make($data);
 
-        // コンテンツタイプ
-        if (empty($content_type)) {
-            $content_type = $image->mime();
-        }
-
-        // 同一メディア存在チェック
-        $media = $this->media()->filename($filename)->subdirectory($subdirectory)->first();
-        if ($media) {
-            // 同一メデイアが存在する場合
-
-            // メディア更新
-            $media->width = $image->width();
-            $media->height = $image->height();
-            $media->content_type = $content_type;
-            $media->subdirectory = $subdirectory;
-            $media->filename = $filename;
-            $media->uploaded_at = $uploaded_at;
-        } else {
-            // 同一メディアが存在しない場合
-
-            // メディア作成
-            $media = $this->media()->create([
-                'width' => $image->width(),
-                'height' => $image->height(),
-                'content_type' => $content_type,
-                'subdirectory' => $subdirectory,
-                'filename' => $filename,
-                'rounds' => 0,
-                'uploaded_at' => $uploaded_at,
-            ]);
-        }
-
-        // ファイルアップロード
-        if (ImageText::isImageText($data)) {
-            // イメージテキストの場合
-            $path = self::disk()->putFileAs($this->directory, $data, $media->uri);
-        } else {
-            // イメージテキスト以外の場合
-            $path = Path::combine($this->directory, $media->uri);
-            self::disk()->put($path, $data);
-        }
-
-        // サイズ設定
-        try {
-            $media->size = self::disk()->size($path);
-            $media->save();
-        } catch (Exception $e) {
-            self::disk()->delete($path);
-            throw $e;
-        }
-
-        return $media;
-    }
-
-    /**
-     * イメージファイルをメディアボックスへアップロードします。
-     * イメージは、メディアボックスに関するコンフィグレーションのイメージ最大幅に従い圧縮されます。
-     * 圧縮されたイメージファイルは、ランダムな一意の名前が割り当てられてアップロード日付ごとのフォルダに自動で振り分けれれます。
-     * 
-     * @param UploadedFile $file アップロードファイル
-     * @return Medium メディア
-     */
-    public function uploadFile(UploadedFile $file): Medium
-    {
-        // イメージ圧縮
-        $image = Image::make($file);
-        $max_width = config('feeldee.mediabox.image.max_width');
-        if ($image->width() > $max_width) {
-            // イメージ圧縮
+        // 画像の最大幅をコンフィグレーションで制限
+        $max_width = config('mediabox.image.max_width');
+        if ($max_width && $image->width() > $max_width) {
+            // 縦横比を維持したまま指定した横幅に自動的に圧縮
             $image->widen($max_width);
         }
 
+        // メディアサブディレクトリ
+        if (empty($subdirectory)) {
+            // サブディレクトリが指定されていない場合は、アップロード日時のyyyyMMdd形式を使用
+            $subdirectory = $uploaded_at->format('Ymd');
+        }
+
+        // メディアファイル名
+        if (empty($filename)) {
+            // ファイル名が指定されていない場合は、メディアコンテンツのオリジナルファイル名を使用
+            $filename = $data instanceof UploadedFile ? $data->getClientOriginalName() : $image->basename();
+        }
+
+        // メディアコンテンツ幅
+        $width = $image->width();
+
+        // メディアコンテンツ高さ
+        $height = $image->height();
+
+        // メディアコンテンツタイプ
+        if ($data instanceof UploadedFile) {
+            $content_type = $data->getMimeType();
+        } else {
+            $content_type = $image->mime();
+        }
+
         // メディア作成
-        $uploaded_at = Carbon::now();
-        $media = $this->media()->create([
-            'width' => $image->width(),
-            'height' => $image->height(),
-            'content_type' => $file->getMimeType(),
-            'subdirectory' => $uploaded_at->format('Ymd'),
-            'filename' => $file->hashName(),
-            'rounds' => 0,
+        $medium = $this->media()->create([
+            'width' => $width,
+            'height' => $height,
+            'content_type' => $content_type,
+            'subdirectory' => $subdirectory,
+            'filename' => $filename,
             'uploaded_at' => $uploaded_at,
         ]);
 
         // ファイルアップロード
-        self::disk()->put($media->path, $image->stream());
+        self::disk()->put($medium->path, $image->stream());
 
-        // サイズ設定
+        // メディアコンテンツサイズ
         try {
-            $media->size = self::disk()->size($media->path);
-            $media->save();
+            $medium->size = self::disk()->size($medium->path);
+            $medium->save();
         } catch (Exception $e) {
-            self::disk()->delete($media->path);
+            self::disk()->delete($medium->path);
             throw $e;
         }
 
-        return $media;
+        return $medium;
     }
 
     // ========================== ここまで整理ずみ ==========================

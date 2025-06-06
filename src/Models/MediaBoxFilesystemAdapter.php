@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 trait MediaBoxFilesystemAdapter
 {
     /**
-     * 環境変数:MEDIA_BOX_DISKで指定したメディアボックスのファイルシステムディスクを取得します（デフォルト:mbox）。
+     * メディアボックスディスク
      * 
      * @return FilesystemAdapter
      */

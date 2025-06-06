@@ -20,7 +20,7 @@ class Medium extends Model
      *
      * @var array
      */
-    protected $fillable = ['size', 'width', 'height', 'content_type', 'subdirectory', 'filename', 'uri', 'rounds', 'uploaded_at'];
+    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
 
     /**
      * 配列に追加する属性
@@ -41,32 +41,19 @@ class Medium extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (Media $media) {
-            // URI生成
-            $media->encode();
+        static::created(function (Medium $media) {
+            // メディアコンテンツURI生成
+            $media->generteURI();
         });
 
-        static::deleted(function (Media $media) {
-            // メディアファイル削除
+        static::deleted(function (Medium $media) {
+            // メディアコンテンツファイル削除
             $media->deleteFile();
         });
     }
 
     /**
-     * メディアをエンコードしてURIを生成します。
-     */
-    protected function encode(): void
-    {
-        $extension = MimeType::toExtension($this->content_type);
-        $salt = config('app.key');
-        // 注）URLエンコード対象の文字は使用しない
-        $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
-        $this->uri = $hashids->encode($this->id, $this->rounds) . '.' . $extension;
-        $this->save(['timestamps' => false]);
-    }
-
-    /**
-     * メディアを保管しているメディアボックスを取得
+     * メディアボックス
      */
     public function mediaBox()
     {
@@ -74,7 +61,7 @@ class Medium extends Model
     }
 
     /**
-     * パス
+     * メディアコンテンツパス
      *
      * @return Attribute
      */
@@ -84,6 +71,21 @@ class Medium extends Model
             get: fn($value) => Path::combine($this->mediaBox->directory, $this->uri)
         );
     }
+
+    /**
+     * メディアコンテンツURIを生成します。
+     */
+    protected function generteURI(): void
+    {
+        $extension = MimeType::toExtension($this->content_type);
+        $salt = config('mediabox.uri_salt');
+        // 注）URLエンコード対象の文字は使用しない
+        $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
+        $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;
+        $this->save(['timestamps' => false]);
+    }
+
+    // ========================== ここまで整理ずみ ==========================
 
     /**
      * ソース
