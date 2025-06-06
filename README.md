@@ -42,7 +42,8 @@ feeldee-mediaboxは、[Feeldee Framework](https://github.com/ryossi/feeldee-fram
 
 | パッケージ名 | バージョン | ライセンス | 用途 |
 | - | - | - | - |
-| [Intervention Image](https://image.intervention.io/v2) | 2.x | MIT | メディアメディアコンテンツの操作 |
+| [Intervention Image](https://image.intervention.io/v2) | 2.x | MIT | メディアコンテンツの情報取得と操作 |
+| [Hashids](https://github.com/vinkla/hashids?tab=readme-ov-file) | 5.x | MIT | メディアコンテンツURIの自動生成 |
 
 ## ライセンス
 

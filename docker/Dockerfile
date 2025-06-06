@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# 必要なパッケージをインストールしてGDをビルド・インストール
+# 画像処理に必要なパッケージをインストールしてGDをビルド・インストール
 RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libpng-dev \
@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     libxpm-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-xpm \
     && docker-php-ext-install -j$(nproc) gd
+
+# URI自動生成に必要なパッケージをインストール
+RUN docker-php-ext-install bcmath
 
 # Xdebugのインストール
 RUN pecl install xdebug && docker-php-ext-enable xdebug
