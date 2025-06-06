@@ -1,3 +1,4 @@
 providers:
   - Feeldee\Framework\FeeldeeServiceProvider
   - Feeldee\MediaBox\MediaBoxServiceProvider
+  - Intervention\Image\ImageServiceProvider

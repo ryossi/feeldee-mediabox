@@ -1,5 +1,15 @@
 FROM php:8.2-apache
 
+# 必要なパッケージをインストールしてGDをビルド・インストール
+RUN apt-get update && apt-get install -y \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libwebp-dev \
+    libxpm-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-xpm \
+    && docker-php-ext-install -j$(nproc) gd
+
 # Xdebugのインストール
 RUN pecl install xdebug && docker-php-ext-enable xdebug
 
