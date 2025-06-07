@@ -8,6 +8,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 
 class MediaBoxTest extends TestCase
@@ -347,5 +348,63 @@ class MediaBoxTest extends TestCase
         $this->assertEquals($height, $medium->height, 'メディアコンテンツ高さがアップロードコンテンツから自動的に計算されること');
         $this->assertEquals($content_type, $medium->content_type, 'メディアコンテンツタイプがアップロードコンテンツから自動的に計算されること');
         $this->assertEquals($filename, $medium->filename, 'メディアファイル名は、指定したかった場合はメディアコンテンツのオリジナルファイル名となること');
+    }
+
+    /**
+     * コンテンツアップロード
+     * 
+     * - メアップロードの際に、画像の最大幅をコンフィグレーションで制限することができることを確認します。
+     * - 画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツサイズが設定されることを確認します。
+     * - 画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ幅が設定されることを確認します。
+     * - 画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ高さが設定されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
+     */
+    public function test_mediaBox_upload_max_width()
+    {
+        // 準備
+        Storage::fake();
+        Config::set('mediabox.image.max_width', 600); // 画像の最大幅を600pxに設定
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $filename = 'test.jpg'; // メディアコンテンツファイル名
+        $content_type = 'image/jpeg'; // メディアコンテンツタイプ
+        $file = UploadedFile::fake()->image($filename, 1200, 900)->mimeType($content_type);
+
+        // 実行
+        $medium = $mediaBox->upload($file);
+
+        // 評価
+        $size = Storage::disk()->size($medium->path); // メディアコンテンツサイズ
+        $width = 600; // メディアコンテンツ幅
+        $height = 450; // メディアコンテンツ高さ
+
+        // コンテンツをメディアボックスディスクにアップロードできること
+        $this->assertDatabaseHas('media', [
+            'id' => $medium->id,
+            'media_box_id' => $mediaBox->id,
+            'filename' => $filename,
+            'size' => $size,
+            'width' => $width,
+            'height' => $height,
+            'content_type' => $content_type,
+            'subdirectory' => null,
+        ]);
+        $this->assertTrue(Storage::disk()->exists($medium->path), 'ローカルファイルをアップロードできること');
+        $this->assertEquals($size, $medium->size, '画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツサイズが設定されること');
+        $this->assertEquals($width, $medium->width, '画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ幅が設定されること');
+        $this->assertEquals($height, $medium->height, '画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ高さが設定されること');
     }
 }
