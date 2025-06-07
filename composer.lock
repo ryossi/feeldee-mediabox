@@ -3269,16 +3269,15 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ryossi/feeldee-framework.git",
-                "reference": "7f0607be0e8b2e6640144d191bc689860b4a6f72"
+                "reference": "b8e7e25a220b5aaa0f7c32a2ddbbb33fecac1e8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ryossi/feeldee-framework/zipball/7f0607be0e8b2e6640144d191bc689860b4a6f72",
-                "reference": "7f0607be0e8b2e6640144d191bc689860b4a6f72",
+                "url": "https://api.github.com/repos/ryossi/feeldee-framework/zipball/b8e7e25a220b5aaa0f7c32a2ddbbb33fecac1e8a",
+                "reference": "b8e7e25a220b5aaa0f7c32a2ddbbb33fecac1e8a",
                 "shasum": ""
             },
             "require": {
-                "hashids/hashids": "^5.0",
                 "laravel/framework": "^10.10",
                 "paquettg/php-html-parser": "^3.1",
                 "php": "^8.2"
@@ -3332,7 +3331,7 @@
                 "source": "https://github.com/ryossi/feeldee-framework",
                 "issues": "https://github.com/ryossi/feeldee-framework/issues"
             },
-            "time": "2025-05-22T01:58:49+00:00"
+            "time": "2025-06-07T12:40:31+00:00"
         },
         {
             "name": "symfony/console",
