@@ -79,12 +79,6 @@ class MediaBox extends Model
             $image->widen($max_width);
         }
 
-        // メディアサブディレクトリ
-        if (empty($subdirectory)) {
-            // サブディレクトリが指定されていない場合は、アップロード日時のyyyyMMdd形式を使用
-            $subdirectory = $uploaded_at->format('Ymd');
-        }
-
         // メディアファイル名
         if (empty($filename)) {
             // ファイル名が指定されていない場合は、メディアコンテンツのオリジナルファイル名を使用

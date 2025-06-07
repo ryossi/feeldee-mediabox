@@ -7,6 +7,7 @@ use Feeldee\MediaBox\Models\MediaBox;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class MediaBoxTest extends TestCase
@@ -162,17 +163,84 @@ class MediaBoxTest extends TestCase
      * コンテンツアップロード
      * 
      * - コンテンツをメディアボックスディスクにアップロードできることを確認します。
+     * - ローカルファイルパスを指定してアップロードできることを確認します。
+     * - メディアコンテンツサイズがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツ幅がアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツ高さがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツタイプがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアファイル名を指定した場合は、指定した値がメディアコンテンツファイル名として設定されることを確認します。
+     * - メディアディレクトリを指定した場合は、指定した値がメディアコンテンツサブディレクトリとして設定されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
+     */
+    public function test_mediaBox_upload_filepath()
+    {
+        // 準備
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filename = 'test.jpg';
+        $subdirectory = 'uploads';
+
+        // 実行
+        $medium = $mediaBox->upload($filePath, $filename, $subdirectory);
+
+        // 評価
+        $size = Storage::disk()->size($medium->path); // メディアコンテンツサイズ
+        $width = 120; // メディアコンテンツ幅
+        $height = 120; // メディアコンテンツ高さ
+        $content_type = 'image/jpeg'; // メディアコンテンツタイプ
+
+        // コンテンツをメディアボックスディスクにアップロードできること
+        $this->assertDatabaseHas('media', [
+            'id' => $medium->id,
+            'media_box_id' => $mediaBox->id,
+            'filename' => $filename,
+            'size' => $size,
+            'width' => $width,
+            'height' => $height,
+            'content_type' => $content_type,
+            'subdirectory' => $subdirectory,
+        ]);
+        $this->assertTrue(Storage::disk()->exists($medium->path), 'ローカルファイルパスを指定してアップロードできること');
+        $this->assertEquals($size, $medium->size, 'メディアコンテンツサイズがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($width, $medium->width, 'メディアコンテンツ幅がアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($height, $medium->height, 'メディアコンテンツ高さがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($content_type, $medium->content_type, 'メディアコンテンツタイプがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($filename, $medium->filename, 'メディアファイル名を指定した場合は、指定した値がメディアコンテンツファイル名として設定されること');
+        $this->assertEquals($subdirectory, $medium->subdirectory, 'メディアディレクトリを指定した場合は、指定した値がメディアコンテンツサブディレクトリとして設定されること');
+    }
+
+    /**
+     * コンテンツアップロード
+     * 
+     * - コンテンツをメディアボックスディスクにアップロードできることを確認します。
      * - Base64形式コンテンツ文字列をアップロードできることを確認します。
      * - メディアコンテンツサイズがアップロードコンテンツから自動的に計算されることを確認します。
      * - メディアコンテンツ幅がアップロードコンテンツから自動的に計算されることを確認します。
      * - メディアコンテンツ高さがアップロードコンテンツから自動的に計算されることを確認します。
      * - メディアコンテンツタイプがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアファイル名を指定した場合は、指定した値がメディアコンテンツファイル名として設定されることを確認します。
      * 
      * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
      */
     public function test_mediaBox_upload_base64()
     {
         // 準備
+        Storage::fake();
         $user = new class extends User {
             public function getIdAttribute()
             {
@@ -208,11 +276,76 @@ class MediaBoxTest extends TestCase
             'width' => $width,
             'height' => $height,
             'content_type' => $content_type,
+            'subdirectory' => null,
+            'filename' => $filename,
         ]);
         $this->assertTrue(Storage::disk()->exists($medium->path), 'Base64形式コンテンツ文字列をアップロードできること');
         $this->assertEquals($size, $medium->size, 'メディアコンテンツサイズがアップロードコンテンツから自動的に計算されること');
         $this->assertEquals($width, $medium->width, 'メディアコンテンツ幅がアップロードコンテンツから自動的に計算されること');
         $this->assertEquals($height, $medium->height, 'メディアコンテンツ高さがアップロードコンテンツから自動的に計算されること');
         $this->assertEquals($content_type, $medium->content_type, 'メディアコンテンツタイプがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($filename, $medium->filename, 'メディアファイル名を指定した場合は、指定した値がメディアコンテンツファイル名として設定されること');
+    }
+
+    /**
+     * コンテンツアップロード
+     * 
+     * - コンテンツをメディアボックスディスクにアップロードできることを確認します。
+     * - アップロードファイルをアップロードできることを確認します。
+     * - メディアコンテンツサイズがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツ幅がアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツ高さがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアコンテンツタイプがアップロードコンテンツから自動的に計算されることを確認します。
+     * - メディアファイル名は、指定したかった場合はメディアコンテンツのオリジナルファイル名となることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
+     */
+    public function test_mediaBox_upload_uploaded()
+    {
+        // 準備
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $filename = 'test.jpg'; // メディアコンテンツファイル名
+        $width = 600; // メディアコンテンツ幅
+        $height = 400; // メディアコンテンツ高さ
+        $content_type = 'image/jpeg'; // メディアコンテンツタイプ
+        $file = UploadedFile::fake()->image($filename, $width, $height)->mimeType($content_type);
+
+        // 実行
+        $medium = $mediaBox->upload($file);
+
+        // 評価
+        $size = Storage::disk()->size($medium->path); // メディアコンテンツサイズ
+
+        // コンテンツをメディアボックスディスクにアップロードできること
+        $this->assertDatabaseHas('media', [
+            'id' => $medium->id,
+            'media_box_id' => $mediaBox->id,
+            'filename' => $filename,
+            'size' => $size,
+            'width' => $width,
+            'height' => $height,
+            'content_type' => $content_type,
+            'subdirectory' => null,
+        ]);
+        $this->assertTrue(Storage::disk()->exists($medium->path), 'ローカルファイルをアップロードできること');
+        $this->assertEquals($size, $medium->size, 'メディアコンテンツサイズがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($width, $medium->width, 'メディアコンテンツ幅がアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($height, $medium->height, 'メディアコンテンツ高さがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($content_type, $medium->content_type, 'メディアコンテンツタイプがアップロードコンテンツから自動的に計算されること');
+        $this->assertEquals($filename, $medium->filename, 'メディアファイル名は、指定したかった場合はメディアコンテンツのオリジナルファイル名となること');
     }
 }

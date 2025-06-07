@@ -68,7 +68,7 @@ class Medium extends Model
     protected function path(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => Path::combine($this->mediaBox->directory, $this->uri)
+            get: fn($value) => Path::combine($this->mediaBox->directory, $this->subdirectory, $this->uri)
         );
     }
 
