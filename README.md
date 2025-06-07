@@ -1,6 +1,6 @@
 # Feeldee MediaBox
 
-feeldee-mediabox、[Feeldee Framework](https://github.com/ryossi/feeldee-framework)ベースのアプリケーションに簡易的なメディア管理機能を追加するためのLaravelパッケージです。
+feeldee-mediaboxは、[Feeldee Framework](https://github.com/ryossi/feeldee-framework)ベースのアプリケーションに簡易的なコンテンツ管理機能を追加するためのLaravelパッケージです。
 
 ## 利用者
 
@@ -35,6 +35,15 @@ feeldee-mediabox、[Feeldee Framework](https://github.com/ryossi/feeldee-framewo
 4. ソースコードの必要な部分にブレイクポイントを設定します。
 5. テストコンテナのコマンドプロンプトで`./vendor/bin/phpunit --testsuite Feature`を実行してください。
 6. 最後に`docker compose down`でテストコンテナを終了します。
+
+## 依存パッケージ
+
+以下のサードパーティパッケージに依存しています。
+
+| パッケージ名 | バージョン | ライセンス | 用途 |
+| - | - | - | - |
+| [Intervention Image](https://image.intervention.io/v2) | 2.x | MIT | メディアコンテンツの情報取得と操作 |
+| [Hashids](https://github.com/vinkla/hashids?tab=readme-ov-file) | 5.x | MIT | メディアコンテンツURIの自動生成 |
 
 ## ライセンス
 

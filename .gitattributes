@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.md diff=markdown
+*.php diff=php
+
+.* export-ignore
+CHANGELOG.md export-ignore
+/tests export-ignore
+/database/factories export-ignore
+composer.lock export-ignore
+docker-compose.yml export-ignore
+/docker export-ignore
+index.php export-ignore
+phpunit.xml export-ignore
+testbench.yaml export-ignore
