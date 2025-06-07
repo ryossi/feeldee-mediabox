@@ -1,8 +1,10 @@
 <?php
 
 return [
-    // メディアボックス最大容量
-    'max_size' => env('FEELDEE_MEDIA_BOX_MAX_SIZE', 104857600), // 100MB
+    // プレフィックス
+    'prefix' => env('FEELDEE_MEDIA_BOX_PREFIX', 'mbox'),
+    // メディアボックス最大サイズ（MB単位）
+    'max_size' => env('FEELDEE_MEDIA_BOX_MAX_SIZE', 100),
     // URIソルト
     'uri_salt' => env('FEELDEE_MEDIA_BOX_URI_SALT', env('APP_KEY', '')),
     // イメージ

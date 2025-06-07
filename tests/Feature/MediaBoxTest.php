@@ -407,4 +407,38 @@ class MediaBoxTest extends TestCase
         $this->assertEquals($width, $medium->width, '画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ幅が設定されること');
         $this->assertEquals($height, $medium->height, '画像の最大幅を制限している場合には、リサイズ後の画像のメディアコンテンツ高さが設定されること');
     }
+
+    /**
+     * コンテンツアップロード
+     * 
+     * - メディアボックス使用済サイズとアップロードするコンテンツの合計がメディアボックス最大サイズ以上の場合は、コンテンツアップロードは失敗することを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
+     */
+    public function test_mediaBox_upload_exceed_max_size()
+    {
+        // 準備
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+            'max_size' => 1, // メディアボックス最大サイズを1MBに設定
+        ]);
+        $filePath = __DIR__ . '/test_files/test_image_large.jpg'; // テスト用の大きな画像ファイルパス
+
+        // 実行
+        $this->assertThrows(function () use ($mediaBox, $filePath) {
+            $mediaBox->upload($filePath);
+        }, ApplicationException::class, 'MediaBoxNotFreeSpace');
+    }
 }

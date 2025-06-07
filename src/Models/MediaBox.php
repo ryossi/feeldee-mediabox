@@ -49,6 +49,46 @@ class MediaBox extends Model
     }
 
     /**
+     * メディアボックスプレフィックス
+     */
+    public static function prefix(): string
+    {
+        return config('mediabox.prefix');
+    }
+
+    /**
+     * メディアボックスディレクトリ
+     *
+     * @return Attribute
+     */
+    protected function directory(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => Path::combine(self::prefix(), $value),
+        );
+    }
+
+    /**
+     * メディアボックス最大サイズ（MB単位）
+     */
+    protected function maxSize(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => is_null($value) ? config('mediabox.max_size') : $value,
+        );
+    }
+
+    /**
+     * メディアボックス使用済サイズ（バイト）
+     */
+    protected function usedSize(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => $this->media()->sum('size'),
+        );
+    }
+
+    /**
      * コンテンツアップロード
      * 
      * コンテンツをメディアボックスにアップロードします。
@@ -58,6 +98,7 @@ class MediaBox extends Model
      * @param string|null $subdirectory メディアサブディレクトリ（デフォルトは、メディアコンテンツアップロード日時のyyyyMMdd形式）
      * @param mixed $uploaded_at アップロード日時（デフォルトは、システム日時）
      * @return Medium メディウム
+     * @throws ApplicationException メディアボックスの使用済サイズが最大サイズを超えた場合
      */
     public function upload(mixed $data, string|null $filename = null, string|null $subdirectory = null,  Carbon|string|null $uploaded_at = null): Medium
     {
@@ -82,7 +123,13 @@ class MediaBox extends Model
         // メディアファイル名
         if (empty($filename)) {
             // ファイル名が指定されていない場合は、メディアコンテンツのオリジナルファイル名を使用
-            $filename = $data instanceof UploadedFile ? $data->getClientOriginalName() : $image->basename();
+            if ($data instanceof UploadedFile) {
+                // アップロードファイルの場合
+                $filename = $data->getClientOriginalName();
+            } else if (is_string($data)) {
+                // 文字列の場合は、パスからファイル名を取得
+                $filename = basename($data);
+            }
         }
 
         // メディアコンテンツ幅
@@ -114,6 +161,13 @@ class MediaBox extends Model
         // メディアコンテンツサイズ
         try {
             $medium->size = self::disk()->size($medium->path);
+            if (($this->used_size + $medium->size) > $this->max_size * 1024 * 1024) {
+                // メディアボックス使用済サイズとアップロードするコンテンツの合計がメディアボックス最大サイズ以上の場合
+                throw new ApplicationException(83002, [
+                    'used_size' => $this->used_size,
+                    'max_size' => $this->max_size,
+                ]);
+            }
             $medium->save();
         } catch (Exception $e) {
             self::disk()->delete($medium->path);
@@ -124,38 +178,6 @@ class MediaBox extends Model
     }
 
     // ========================== ここまで整理ずみ ==========================
-
-    /**
-     * 最大容量（MB）
-     */
-    protected function maxSize(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => is_null($value) ? config('feeldee.mediabox.max_size') : $value,
-        );
-    }
-
-    /**
-     * 容量（バイト）
-     */
-    protected function size(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => $this->media()->sum('size'),
-        );
-    }
-
-    /**
-     * ディレクトリ
-     *
-     * @return Attribute
-     */
-    protected function directory(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => Path::combine(self::prefix(), $value),
-        );
-    }
 
     /**
      * 容量をフォーマットします。
@@ -245,14 +267,6 @@ class MediaBox extends Model
     public function deleteDirectory(): void
     {
         self::disk()->deleteDirectory($this->directory);
-    }
-
-    /**
-     * メディアボックスプレフィックス取得
-     */
-    public static function prefix(): string
-    {
-        return config('feeldee.mediabox.prefix');
     }
 
     /**
