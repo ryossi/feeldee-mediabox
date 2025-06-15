@@ -1,15 +1,17 @@
 <?php
 
 return [
-    // プレフィックス
+    // メディアボックスプレフィックス
     'prefix' => env('FEELDEE_MEDIA_BOX_PREFIX', 'mbox'),
     // メディアボックス最大サイズ（MB単位）
     'max_size' => env('FEELDEE_MEDIA_BOX_MAX_SIZE', 100),
-    // URIソルト
+    // メディアコンテンツURIソルト
     'uri_salt' => env('FEELDEE_MEDIA_BOX_URI_SALT', env('APP_KEY', '')),
+    // メディアボックスディスク（FILESYSTEM_DISKを使用する場合はnullまたはキーを削除）
+    'disk' => env('FEELDEE_MEDIA_BOX_DISK', null),
     // イメージ
     'image' => [
-        // 最大幅（制限する場合、ピクセル値を数値で指定、制限しない場合はnullまたはキーを削除）
+        // イメージ最大幅（制限する場合、ピクセル値を数値で指定、制限しない場合はnullまたはキーを削除）
         'max_width' => null,
     ]
 ];
