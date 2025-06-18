@@ -6,10 +6,10 @@ use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\MediaBox\Models\MediaBox;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use Tests\Models\User;
 
 class MediaBoxTest extends TestCase
 {
@@ -440,5 +440,118 @@ class MediaBoxTest extends TestCase
         $this->assertThrows(function () use ($mediaBox, $filePath) {
             $mediaBox->upload($filePath);
         }, ApplicationException::class, 'MediaBoxNotFreeSpace');
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_has_mediaBox_true()
+    {
+        // 準備
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        // 実行
+        $hasMediaBox = $user->hasMediaBox();
+
+        // 評価
+        $this->assertTrue($hasMediaBox, 'ユーザがメディアボックスを持っていることを確認できること');
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_has_mediaBox_false()
+    {
+        // 準備
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+
+        // 実行
+        $hasMediaBox = $user->hasMediaBox();
+
+        // 評価
+        $this->assertFalse($hasMediaBox, 'ユーザがメディアボックスを持っていないことを確認できること');
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - コンフィグレーションでメディアボックスとの関連付けタイプを"composition"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスも同時に削除することができることを確認します。
+     *
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_mediaBox_composition()
+    {
+        // 準備
+        config(['mediabox.user_relation_type' => 'composition']);
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseCount('media_boxes', 1);
+
+        // 実行
+        $user->delete();
+
+        // 評価
+        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスも同時に削除されること
+        $this->assertDatabaseCount('media_boxes', 0);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - コンフィグレーションでメディアボックスとユーザとの関連付けタイプを"aggregation"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスは削除されないことを確認します。
+     *
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_mediaBox_aggregation()
+    {
+        // 準備
+        config(['mediabox.user_relation_type' => 'aggregation']);
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseCount('media_boxes', 1);
+
+        // 実行
+        $user->delete();
+
+        // 評価
+        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスは削除されないこと
+        $this->assertDatabaseCount('media_boxes', 1);
+        $this->assertDatabaseCount('users', 0);
     }
 }
