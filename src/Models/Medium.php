@@ -85,6 +85,16 @@ class Medium extends Model
         $this->save(['timestamps' => false]);
     }
 
+    /**
+     * メディアコンテンツのファイルを削除します。
+     * 
+     * @return void
+     */
+    protected function deleteFile(): void
+    {
+        self::disk()->delete($this->path);
+    }
+
     // ========================== ここまで整理ずみ ==========================
 
     /**
@@ -107,16 +117,6 @@ class Medium extends Model
     public function downloadFile(): StreamedResponse
     {
         return self::disk()->download($this->path);
-    }
-
-    /**
-     * メディアファイルを削除します。
-     * 
-     * @return void
-     */
-    public function deleteFile(): void
-    {
-        self::disk()->delete($this->path);
     }
 
     /**

@@ -43,6 +43,11 @@ class MediaBox extends Model
         });
 
         static::deleted(function (MediaBox $mediaBox) {
+            // メディアボックスに紐づくメディアコンテンツを削除
+            $mediaBox->media()->each(function (Medium $medium) {
+                // メディアコンテンツ削除
+                $medium->delete();
+            });
             // ディレクトリ削除
             $mediaBox->deleteDirectory();
         });

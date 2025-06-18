@@ -13,5 +13,7 @@ return [
     'image' => [
         // イメージ最大幅（制限する場合、ピクセル値を数値で指定、制限しない場合はnullまたはキーを削除）
         'max_width' => null,
-    ]
+    ],
+    // メディアボックスとユーザとの関連付けタイプ（aggregationまたはcomposition）
+    'user_relation_type' => 'aggregation'
 ];
