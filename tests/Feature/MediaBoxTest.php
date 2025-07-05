@@ -84,7 +84,7 @@ class MediaBoxTest extends TestCase
             MediaBox::create([
                 'user_id' => $user->id,
             ]);
-        }, ApplicationException::class, 'MediaBoxExists');
+        }, ApplicationException::class, __('feeldee::messages.' . MediaBox::ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS));
     }
 
     /**
@@ -439,7 +439,7 @@ class MediaBoxTest extends TestCase
         // 実行
         $this->assertThrows(function () use ($mediaBox, $filePath) {
             $mediaBox->upload($filePath);
-        }, ApplicationException::class, 'MediaBoxNotFreeSpace');
+        }, ApplicationException::class, __('feeldee::messages.' . MediaBox::ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED));
     }
 
     /**

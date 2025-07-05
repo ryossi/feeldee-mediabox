@@ -58,6 +58,16 @@ class MediaBox extends Model
      */
     const USER_RELATION_TYPE_COMPOSITION = 'composition';
 
+    /**
+     * メディアボックスが既に存在しているエラーコード
+     */
+    const ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS = 83001;
+
+    /**
+     * メディアボックスの使用済サイズが最大サイズを超えたエラーコード
+     */
+    const ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED = 83002;
+
     protected $fillable = ['user_id', 'directory', 'max_size'];
 
     /**
