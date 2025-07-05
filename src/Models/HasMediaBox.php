@@ -9,7 +9,7 @@ trait HasMediaBox
     public static function bootHasMediaBox()
     {
         static::deleting(function (Model $model) {
-            if (config('mediabox.user_relation_type') === 'composition') {
+            if (config(MediaBox::CONFIG_KEY_USER_RELATION_TYPE) === MediaBox::USER_RELATION_TYPE_COMPOSITION) {
                 // 関連付けされたメディアボックスも同時に削除
                 $model->mediaBox->delete();
             }

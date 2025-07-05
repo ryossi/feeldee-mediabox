@@ -20,9 +20,43 @@ class MediaBox extends Model
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
     /**
+     * メディアボックスプレフィックスコンフィグレーションキー
+     */
+    const CONFIG_KEY_PREFIX = 'mediabox.prefix';
+
+    /**
+     * メディアボックス最大サイズコンフィグレーションキー
+     */
+    const CONFIG_KEY_MAX_SIZE = 'mediabox.max_size';
+
+    /**
+     * メディアボックスディスクコンフィグレーションキー
+     */
+    const CONFIG_KEY_DISK = 'mediabox.disk';
+
+    /**
      * アップロードイメージ最大幅コンフィグレーションキー
      */
     const CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH = 'mediabox.upload_image_max_width';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプコンフィグレーションキー
+     */
+    const CONFIG_KEY_USER_RELATION_TYPE = 'mediabox.user_relation_type';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプ
+     * 
+     * メディアボックスはユーザに紐づきますが、ユーザが削除されてもメディアボックスは削除されません。
+     */
+    const USER_RELATION_TYPE_AGGREGATION = 'aggregation';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプ
+     * 
+     * ユーザが削除されると、メディアボックスも削除されます。
+     */
+    const USER_RELATION_TYPE_COMPOSITION = 'composition';
 
     protected $fillable = ['user_id', 'directory', 'max_size'];
 
@@ -63,7 +97,7 @@ class MediaBox extends Model
      */
     public static function prefix(): string
     {
-        return config('mediabox.prefix');
+        return config(self::CONFIG_KEY_PREFIX);
     }
 
     /**
@@ -84,7 +118,7 @@ class MediaBox extends Model
     protected function maxSize(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => is_null($value) ? config('mediabox.max_size') : $value,
+            get: fn($value) => is_null($value) ? config(self::CONFIG_KEY_MAX_SIZE) : $value,
         );
     }
 

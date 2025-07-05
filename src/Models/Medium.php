@@ -16,6 +16,11 @@ class Medium extends Model
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
     /**
+     * メディアコンテンツURIソルトコンフィグレーションキー
+     */
+    const CONFIG_KEY_CONTENT_URI_SALT = 'mediabox.media_content_uri_salt';
+
+    /**
      * 複数代入可能な属性
      *
      * @var array
@@ -43,7 +48,7 @@ class Medium extends Model
     {
         static::created(function (Medium $media) {
             // メディアコンテンツURI生成
-            $media->generteURI();
+            $media->generateURI();
         });
 
         static::deleted(function (Medium $media) {
@@ -75,10 +80,10 @@ class Medium extends Model
     /**
      * メディアコンテンツURIを生成します。
      */
-    protected function generteURI(): void
+    protected function generateURI(): void
     {
         $extension = MimeType::toExtension($this->content_type);
-        $salt = config('mediabox.uri_salt');
+        $salt = config(self::CONFIG_KEY_CONTENT_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない
         $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
         $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;

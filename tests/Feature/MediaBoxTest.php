@@ -503,7 +503,7 @@ class MediaBoxTest extends TestCase
     public function test_user_mediaBox_composition()
     {
         // 準備
-        config(['mediabox.user_relation_type' => 'composition']);
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_COMPOSITION]);
         $user = User::create([
             'name' => 'テストユーザ',
             'email' => 'test@example.com',
@@ -534,7 +534,7 @@ class MediaBoxTest extends TestCase
     public function test_user_mediaBox_aggregation()
     {
         // 準備
-        config(['mediabox.user_relation_type' => 'aggregation']);
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_AGGREGATION]);
         $user = User::create([
             'name' => 'テストユーザ',
             'email' => 'test@example.com',
