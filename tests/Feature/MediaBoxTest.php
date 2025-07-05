@@ -364,7 +364,7 @@ class MediaBoxTest extends TestCase
     {
         // 準備
         Storage::fake();
-        Config::set('mediabox.image.max_width', 600); // 画像の最大幅を600pxに設定
+        Config::set(MediaBox::CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH, 600); // 画像の最大幅を600pxに設定
         $user = new class extends User {
             public function getIdAttribute()
             {

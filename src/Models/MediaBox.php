@@ -19,6 +19,11 @@ class MediaBox extends Model
 {
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
+    /**
+     * アップロードイメージ最大幅コンフィグレーションキー
+     */
+    const CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH = 'mediabox.upload_image_max_width';
+
     protected $fillable = ['user_id', 'directory', 'max_size'];
 
     /**
@@ -119,7 +124,7 @@ class MediaBox extends Model
         $image = Image::make($data);
 
         // 画像の最大幅をコンフィグレーションで制限
-        $max_width = config('mediabox.image.max_width');
+        $max_width = config(MediaBox::CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH);
         if ($max_width && $image->width() > $max_width) {
             // 縦横比を維持したまま指定した横幅に自動的に圧縮
             $image->widen($max_width);
