@@ -2,8 +2,6 @@
 
 namespace Feeldee\MediaBox\Models;
 
-use Feeldee\Framework\Facades\ImageText;
-use Feeldee\Framework\Facades\Path;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +10,8 @@ use Carbon\Carbon;
 use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
+use Feeldee\MediaBox\Facades\ImageText;
+use Feeldee\MediaBox\Facades\Path;
 use Illuminate\Support\Collection;
 use Intervention\Image\Facades\Image;
 

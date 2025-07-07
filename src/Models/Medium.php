@@ -2,9 +2,9 @@
 
 namespace Feeldee\MediaBox\Models;
 
-use Feeldee\Framework\Facades\MimeType;
-use Feeldee\Framework\Facades\Path;
 use Feeldee\Framework\Models\SetUser;
+use Feeldee\MediaBox\Facades\MimeType;
+use Feeldee\MediaBox\Facades\Path;
 use Hashids\Hashids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
