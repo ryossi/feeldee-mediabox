@@ -1,12 +1,12 @@
 <?php
 
-namespace Feeldee\MediaBox\Casts;
+namespace Feeldee\MediaBox\Hooks;
 
 use Feeldee\MediaBox\Models\MediaBox;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use PHPHtmlParser\Dom;
 
-class Html implements CastsAttributes
+class HTML implements CastsAttributes
 {
     /**
      * Cast the given value.

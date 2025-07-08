@@ -1,6 +1,6 @@
 <?php
 
-namespace Feeldee\MediaBox\Casts;
+namespace Feeldee\MediaBox\Hooks;
 
 use Feeldee\MediaBox\Models\MediaBox;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;

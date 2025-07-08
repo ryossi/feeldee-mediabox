@@ -78,6 +78,18 @@ class Medium extends Model
     }
 
     /**
+     * メディアコンテンツURL
+     *
+     * @return Attribute
+     */
+    protected function url(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => self::disk()->url($this->path)
+        );
+    }
+
+    /**
      * メディアコンテンツURIを生成します。
      */
     protected function generateURI(): void
@@ -101,18 +113,6 @@ class Medium extends Model
     }
 
     // ========================== ここまで整理ずみ ==========================
-
-    /**
-     * ソース
-     *
-     * @return Attribute
-     */
-    protected function src(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => MediaBox::url($this->path)
-        );
-    }
 
     /**
      * メディアファイルをダウンロードします。

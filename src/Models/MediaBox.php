@@ -10,7 +10,6 @@ use Carbon\Carbon;
 use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
-use Feeldee\MediaBox\Facades\ImageText;
 use Feeldee\MediaBox\Facades\Path;
 use Illuminate\Support\Collection;
 use Intervention\Image\Facades\Image;
@@ -231,6 +230,77 @@ class MediaBox extends Model
         return $medium;
     }
 
+    /**
+     * メディアボックスパス変換
+     *
+     * 値がnullの場合は、nullを返却します。
+     * 
+     * 値がメディアの場合は、メディアコンテンツパスを返却します。
+     * 
+     * 値がメディアコンテンツURLの場合は、メディアコンテンツパスの部分のみを返却します。
+     *
+     * その他の場合は、値を文字列に変換して返却します。
+     * 
+     * @param mixed $value 値
+     * @return string|null パス
+     */
+    public static function path(mixed $value): string|null
+    {
+        if ($value === null) {
+            // 値がnullの場合は、nullを返却
+            return null;
+        }
+        if ($value instanceof Medium) {
+            // メディアの場合は、パスを返却
+            return $value->path;
+        }
+        if (is_string($value) && str_starts_with($value, 'http')) {
+            // メディアコンテンツURLの場合は、パスを返却
+            $base_url = self::disk()->url(self::prefix());
+            $value = parse_url($value, PHP_URL_PATH) ?? '';
+            if (str_starts_with($value, $base_url)) {
+                $path = strstr($value, self::prefix());
+                if ($path !== false) {
+                    return $path;
+                }
+            }
+        }
+        // その他の場合は、値を文字列に変換して返却
+        return strval($value);
+    }
+
+    /**
+     * メディアボックスURL変換
+     * 
+     * 値がnullの場合は、nullを返却します。
+     * 
+     * 値がメディアの場合は、メディアコンテンツURLを返却します。
+     * 
+     * 値がメディアコンテンツパスの場合は、メディアボックスディスクを利用してメディアコンテンツURLに変換して返却します。
+     * 
+     * その他の場合は、値を文字列に変換して返却します。
+     * 
+     * @param mixed $value 値
+     * @return string|null URL
+     */
+    public static function url(mixed $value): string|null
+    {
+        if ($value === null) {
+            // 値がnullの場合は、nullを返却
+            return null;
+        }
+        if ($value instanceof Medium) {
+            // メディアの場合は、URLを返却
+            return $value->url;
+        }
+        if (is_string($value) && str_starts_with($value, self::prefix())) {
+            // メディアコンテンツパスの場合は、URLを返却
+            return self::disk()->url($value);
+        }
+        // その他の場合は、値を文字列に変換して返却
+        return strval($value);
+    }
+
     // ========================== ここまで整理ずみ ==========================
 
     /**
@@ -337,60 +407,5 @@ class MediaBox extends Model
         }
         $basename = basename($path);
         return $this->media()->uri($basename)->first();
-    }
-
-    /**
-     * メディアファイルのパスを取得します。
-     * 値がメディアファイルでない場合は、そのまま返却します。
-     * 
-     * @param mixed $value 値
-     * @return string|null パス
-     */
-    public static function path(mixed $value): string|null
-    {
-        if (is_null($value)) {
-            return null;
-        }
-        if ($value instanceof Medium) {
-            // メディアの場合
-            return $value->path;
-        }
-        if (ImageText::isImageText($value)) {
-            // イメージテキストは除外
-            return $value;
-        }
-        $base_url = self::disk()->url(self::prefix());
-        $value = preg_replace('/(https?:\/\/(www\.)?[0-9a-z\-\.]+:?[0-9]{0,5})/', '', $value);
-        if (str_starts_with($value, $base_url)) {
-            $path = strstr($value, self::prefix());
-            if ($path !== false) {
-                return $path;
-            }
-        }
-        return $value;
-    }
-
-    /**
-     * メディアファイルのURLを取得します。
-     * パスがメディアファイルでない場合は、そのまま返却します。
-     * 
-     * @param @param mixed $path パス
-     * @return string|null URL
-     */
-    public static function url(mixed $path): string|null
-    {
-        if (is_null($path)) {
-            return null;
-        }
-        if (ImageText::isImageText($path)) {
-            // イメージテキストは除外
-            return $path;
-        }
-        if (str_starts_with($path, self::prefix())) {
-            return self::disk()->url($path);
-        } else {
-            // メディアボックスのパスではない場合変換しない
-            return $path;
-        }
     }
 }
