@@ -25,7 +25,7 @@ class Medium extends Model
      *
      * @var array
      */
-    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
+    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uploaded_at'];
 
     /**
      * 配列に追加する属性
@@ -85,7 +85,7 @@ class Medium extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => self::disk()->url($this->path)
+            get: fn($value) => self::disk()->url(ltrim($this->path, '/'))
         );
     }
 
@@ -94,6 +94,10 @@ class Medium extends Model
      */
     protected function generateURI(): void
     {
+        if ($this->uri) {
+            // すでにURIが設定されている場合は何もしない（ユニットテストコード用）
+            return;
+        }
         $extension = MimeType::toExtension($this->content_type);
         $salt = config(self::CONFIG_KEY_CONTENT_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない

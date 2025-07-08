@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\MediaBox\Models\MediaBox;
+use Feeldee\MediaBox\Models\Medium;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -553,5 +554,163 @@ class MediaBoxTest extends TestCase
         // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスは削除されないこと
         $this->assertDatabaseCount('media_boxes', 1);
         $this->assertDatabaseCount('users', 0);
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換できることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path()
+    {
+
+        // 準備
+        $url = 'https://example.com/mbox/123/sample.jpg';
+
+        // 実行
+        $path = MediaBox::path($url);
+
+        // 評価
+        $this->assertEquals('/mbox/123/sample.jpg', $path, 'メディアコンテンツURLをメディアコンテンツパスに変換できること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換する際に値がnullの場合は、nullを返却します
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path_null()
+    {
+        // 準備
+        $url = null;
+
+        // 実行
+        $path = MediaBox::path($url);
+
+        // 評価
+        $this->assertNull($path, 'メディアコンテンツURLをメディアコンテンツパスに変換する際に値がnullの場合は、nullを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換する際に値がメディアの場合は、メディアコンテンツパスを返却します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path_media()
+    {
+        // 準備
+        $user = new class extends User {
+
+            use \Feeldee\MediaBox\Models\HasMediaBox;
+
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => 1,
+            'directory' => '123',
+        ]);
+        $medium = Medium::factory()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'uri' => 'sample.jpg',
+        ]);
+
+        // 実行
+        $path = MediaBox::path($medium);
+
+        // 評価
+        $this->assertEquals('/mbox/123/sample.jpg', $path, 'メディアコンテンツURLをメディアコンテンツパスに変換する際に値がメディアの場合は、メディアコンテンツパスを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換できることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url()
+    {
+        // 準備
+        $path = '/mbox/123/sample.jpg';
+
+        // 実行
+        $url = MediaBox::url($path);
+
+        // 評価
+        $this->assertEquals('/storage/mbox/123/sample.jpg', $url, 'メディアコンテンツパスをメディアコンテンツURLに変換できること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換する際に値がnullの場合は、nullを返却します
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url_null()
+    {
+        // 準備
+        $path = null;
+
+        // 実行
+        $url = MediaBox::url($path);
+
+        // 評価
+        $this->assertNull($url, 'メディアコンテンツパスをメディアコンテンツURLに変換する際に値がnullの場合は、nullを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換する際に値がメディアの場合は、メディアコンテンツURLを返却します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url_media()
+    {
+        // 準備
+        $user = new class extends User {
+
+            use \Feeldee\MediaBox\Models\HasMediaBox;
+
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => 1,
+            'directory' => '123',
+        ]);
+        $medium = Medium::factory()->create([
+            'media_box_id' => $mediaBox->id,
+            'uri' => 'sample.jpg',
+        ]);
+
+        // 実行
+        $url = MediaBox::url($medium);
+
+        // 評価
+        $this->assertEquals('/storage/mbox/123/sample.jpg', $url, 'メディアコンテンツパスをメディアコンテンツURLに変換する際に値がメディアの場合は、メディアコンテンツURLを返却します');
     }
 }

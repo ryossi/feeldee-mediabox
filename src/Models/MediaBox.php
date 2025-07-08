@@ -293,9 +293,13 @@ class MediaBox extends Model
             // メディアの場合は、URLを返却
             return $value->url;
         }
-        if (is_string($value) && str_starts_with($value, self::prefix())) {
-            // メディアコンテンツパスの場合は、URLを返却
-            return self::disk()->url($value);
+        if (is_string($value)) {
+            // 先頭が'/'で始まる場合削除
+            $value = ltrim($value, '/');
+            if (str_starts_with($value, self::prefix())) {
+                // メディアコンテンツパスの場合は、URLを返却
+                return self::disk()->url($value);
+            }
         }
         // その他の場合は、値を文字列に変換して返却
         return strval($value);
