@@ -4,6 +4,7 @@ namespace Feeldee\MediaBox;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Foundation\Console\AboutCommand;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
 class MediaBoxServiceProvider extends ServiceProvider
@@ -16,6 +17,23 @@ class MediaBoxServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             __DIR__ . '/../config/mediabox.php',
             'mediabox'
+        );
+
+        // HTMLキャストフック登録
+        Config::set(
+            'feeldee.html_cast_hooks',
+            array_merge(
+                Config::get('feeldee.html_cast_hooks', []),
+                [\Feeldee\MediaBox\Hooks\HTML::class]
+            )
+        );
+        // URLキャストフック登録
+        Config::set(
+            'feeldee.url_cast_hooks',
+            array_merge(
+                Config::get('feeldee.url_cast_hooks', []),
+                [\Feeldee\MediaBox\Hooks\URL::class]
+            )
         );
     }
 

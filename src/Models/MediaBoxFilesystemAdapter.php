@@ -14,8 +14,8 @@ trait MediaBoxFilesystemAdapter
      */
     protected static function disk(): FilesystemAdapter
     {
-        if (config('mediabox.disk')) {
-            return Storage::disk(config('mediabox.disk'));
+        if (config(MediaBox::CONFIG_KEY_DISK)) {
+            return Storage::disk(config(MediaBox::CONFIG_KEY_DISK));
         }
         // デフォルトのストレージディスクを使用
         return Storage::disk();

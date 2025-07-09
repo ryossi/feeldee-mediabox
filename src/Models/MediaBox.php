@@ -2,8 +2,6 @@
 
 namespace Feeldee\MediaBox\Models;
 
-use Feeldee\Framework\Facades\ImageText;
-use Feeldee\Framework\Facades\Path;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,12 +10,62 @@ use Carbon\Carbon;
 use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
+use Feeldee\MediaBox\Facades\Path;
 use Illuminate\Support\Collection;
 use Intervention\Image\Facades\Image;
 
 class MediaBox extends Model
 {
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
+
+    /**
+     * メディアボックスプレフィックスコンフィグレーションキー
+     */
+    const CONFIG_KEY_PREFIX = 'mediabox.prefix';
+
+    /**
+     * メディアボックス最大サイズコンフィグレーションキー
+     */
+    const CONFIG_KEY_MAX_SIZE = 'mediabox.max_size';
+
+    /**
+     * メディアボックスディスクコンフィグレーションキー
+     */
+    const CONFIG_KEY_DISK = 'mediabox.disk';
+
+    /**
+     * アップロードイメージ最大幅コンフィグレーションキー
+     */
+    const CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH = 'mediabox.upload_image_max_width';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプコンフィグレーションキー
+     */
+    const CONFIG_KEY_USER_RELATION_TYPE = 'mediabox.user_relation_type';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプ
+     * 
+     * メディアボックスはユーザに紐づきますが、ユーザが削除されてもメディアボックスは削除されません。
+     */
+    const USER_RELATION_TYPE_AGGREGATION = 'aggregation';
+
+    /**
+     * メディアボックスとユーザとの関連付けタイプ
+     * 
+     * ユーザが削除されると、メディアボックスも削除されます。
+     */
+    const USER_RELATION_TYPE_COMPOSITION = 'composition';
+
+    /**
+     * メディアボックスが既に存在しているエラーコード
+     */
+    const ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS = 83001;
+
+    /**
+     * メディアボックスの使用済サイズが最大サイズを超えたエラーコード
+     */
+    const ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED = 83002;
 
     protected $fillable = ['user_id', 'directory', 'max_size'];
 
@@ -58,7 +106,7 @@ class MediaBox extends Model
      */
     public static function prefix(): string
     {
-        return config('mediabox.prefix');
+        return config(self::CONFIG_KEY_PREFIX);
     }
 
     /**
@@ -79,7 +127,7 @@ class MediaBox extends Model
     protected function maxSize(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => is_null($value) ? config('mediabox.max_size') : $value,
+            get: fn($value) => is_null($value) ? config(self::CONFIG_KEY_MAX_SIZE) : $value,
         );
     }
 
@@ -119,7 +167,7 @@ class MediaBox extends Model
         $image = Image::make($data);
 
         // 画像の最大幅をコンフィグレーションで制限
-        $max_width = config('mediabox.image.max_width');
+        $max_width = config(MediaBox::CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH);
         if ($max_width && $image->width() > $max_width) {
             // 縦横比を維持したまま指定した横幅に自動的に圧縮
             $image->widen($max_width);
@@ -180,6 +228,79 @@ class MediaBox extends Model
         }
 
         return $medium;
+    }
+
+    /**
+     * メディアボックスパス変換
+     *
+     * 値がnullの場合は、nullを返却します。
+     * 
+     * 値がメディアの場合は、メディアコンテンツパスを返却します。
+     * 
+     * 値がメディアコンテンツURLの場合は、メディアコンテンツパスの部分のみを返却します。
+     *
+     * その他の場合は、値を文字列に変換して返却します。
+     * 
+     * @param mixed $value 値
+     * @return string|null パス
+     */
+    public static function path(mixed $value): string|null
+    {
+        if ($value === null) {
+            // 値がnullの場合は、nullを返却
+            return null;
+        }
+        if ($value instanceof Medium) {
+            // メディアの場合は、パスを返却
+            return $value->path;
+        }
+        if (is_string($value)) {
+            // メディアコンテンツURLの場合は、パスを返却
+            $path = parse_url($value, PHP_URL_PATH) ?? '';
+            $prefix = self::prefix();
+            $path = strstr($path, ($prefix[0] !== '/') ? ('/' . $prefix) : $prefix);
+            if ($path !== false) {
+                return $path;
+            }
+        }
+        // その他の場合は、値を文字列に変換して返却
+        return strval($value);
+    }
+
+    /**
+     * メディアボックスURL変換
+     * 
+     * 値がnullの場合は、nullを返却します。
+     * 
+     * 値がメディアの場合は、メディアコンテンツURLを返却します。
+     * 
+     * 値がメディアコンテンツパスの場合は、メディアボックスディスクを利用してメディアコンテンツURLに変換して返却します。
+     * 
+     * その他の場合は、値を文字列に変換して返却します。
+     * 
+     * @param mixed $value 値
+     * @return string|null URL
+     */
+    public static function url(mixed $value): string|null
+    {
+        if ($value === null) {
+            // 値がnullの場合は、nullを返却
+            return null;
+        }
+        if ($value instanceof Medium) {
+            // メディアの場合は、URLを返却
+            return $value->url;
+        }
+        if (is_string($value)) {
+            // 先頭が'/'で始まる場合削除
+            $value = ltrim($value, '/');
+            if (str_starts_with($value, self::prefix())) {
+                // メディアコンテンツパスの場合は、URLを返却
+                return self::disk()->url($value);
+            }
+        }
+        // その他の場合は、値を文字列に変換して返却
+        return strval($value);
     }
 
     // ========================== ここまで整理ずみ ==========================
@@ -288,60 +409,5 @@ class MediaBox extends Model
         }
         $basename = basename($path);
         return $this->media()->uri($basename)->first();
-    }
-
-    /**
-     * メディアファイルのパスを取得します。
-     * 値がメディアファイルでない場合は、そのまま返却します。
-     * 
-     * @param mixed $value 値
-     * @return string|null パス
-     */
-    public static function path(mixed $value): string|null
-    {
-        if (is_null($value)) {
-            return null;
-        }
-        if ($value instanceof Medium) {
-            // メディアの場合
-            return $value->path;
-        }
-        if (ImageText::isImageText($value)) {
-            // イメージテキストは除外
-            return $value;
-        }
-        $base_url = self::disk()->url(self::prefix());
-        $value = preg_replace('/(https?:\/\/(www\.)?[0-9a-z\-\.]+:?[0-9]{0,5})/', '', $value);
-        if (str_starts_with($value, $base_url)) {
-            $path = strstr($value, self::prefix());
-            if ($path !== false) {
-                return $path;
-            }
-        }
-        return $value;
-    }
-
-    /**
-     * メディアファイルのURLを取得します。
-     * パスがメディアファイルでない場合は、そのまま返却します。
-     * 
-     * @param @param mixed $path パス
-     * @return string|null URL
-     */
-    public static function url(mixed $path): string|null
-    {
-        if (is_null($path)) {
-            return null;
-        }
-        if (ImageText::isImageText($path)) {
-            // イメージテキストは除外
-            return $path;
-        }
-        if (str_starts_with($path, self::prefix())) {
-            return self::disk()->url($path);
-        } else {
-            // メディアボックスのパスではない場合変換しない
-            return $path;
-        }
     }
 }

@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use Feeldee\Framework\Exceptions\ApplicationException;
+use Feeldee\Framework\Models\Profile;
 use Feeldee\MediaBox\Models\MediaBox;
+use Feeldee\MediaBox\Models\Medium;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Tests\Models\User;
@@ -84,7 +87,7 @@ class MediaBoxTest extends TestCase
             MediaBox::create([
                 'user_id' => $user->id,
             ]);
-        }, ApplicationException::class, 'MediaBoxExists');
+        }, ApplicationException::class, __('feeldee::messages.' . MediaBox::ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS));
     }
 
     /**
@@ -364,7 +367,7 @@ class MediaBoxTest extends TestCase
     {
         // 準備
         Storage::fake();
-        Config::set('mediabox.image.max_width', 600); // 画像の最大幅を600pxに設定
+        Config::set(MediaBox::CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH, 600); // 画像の最大幅を600pxに設定
         $user = new class extends User {
             public function getIdAttribute()
             {
@@ -439,7 +442,7 @@ class MediaBoxTest extends TestCase
         // 実行
         $this->assertThrows(function () use ($mediaBox, $filePath) {
             $mediaBox->upload($filePath);
-        }, ApplicationException::class, 'MediaBoxNotFreeSpace');
+        }, ApplicationException::class, __('feeldee::messages.' . MediaBox::ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED));
     }
 
     /**
@@ -503,7 +506,7 @@ class MediaBoxTest extends TestCase
     public function test_user_mediaBox_composition()
     {
         // 準備
-        config(['mediabox.user_relation_type' => 'composition']);
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_COMPOSITION]);
         $user = User::create([
             'name' => 'テストユーザ',
             'email' => 'test@example.com',
@@ -534,7 +537,7 @@ class MediaBoxTest extends TestCase
     public function test_user_mediaBox_aggregation()
     {
         // 準備
-        config(['mediabox.user_relation_type' => 'aggregation']);
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_AGGREGATION]);
         $user = User::create([
             'name' => 'テストユーザ',
             'email' => 'test@example.com',
@@ -553,5 +556,269 @@ class MediaBoxTest extends TestCase
         // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスは削除されないこと
         $this->assertDatabaseCount('media_boxes', 1);
         $this->assertDatabaseCount('users', 0);
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換できることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path()
+    {
+
+        // 準備
+        $url = 'https://example.com/mbox/123/sample.jpg';
+
+        // 実行
+        $path = MediaBox::path($url);
+
+        // 評価
+        $this->assertEquals('/mbox/123/sample.jpg', $path, 'メディアコンテンツURLをメディアコンテンツパスに変換できること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換する際に値がnullの場合は、nullを返却します
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path_null()
+    {
+        // 準備
+        $url = null;
+
+        // 実行
+        $path = MediaBox::path($url);
+
+        // 評価
+        $this->assertNull($path, 'メディアコンテンツURLをメディアコンテンツパスに変換する際に値がnullの場合は、nullを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツURLをメディアコンテンツパスに変換する際に値がメディアの場合は、メディアコンテンツパスを返却します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_url_to_path_media()
+    {
+        // 準備
+        $user = new class extends User {
+
+            use \Feeldee\MediaBox\Models\HasMediaBox;
+
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => 1,
+            'directory' => '123',
+        ]);
+        $medium = Medium::factory()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'uri' => 'sample.jpg',
+        ]);
+
+        // 実行
+        $path = MediaBox::path($medium);
+
+        // 評価
+        $this->assertEquals('/mbox/123/sample.jpg', $path, 'メディアコンテンツURLをメディアコンテンツパスに変換する際に値がメディアの場合は、メディアコンテンツパスを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換できることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url()
+    {
+        // 準備
+        $path = '/mbox/123/sample.jpg';
+
+        // 実行
+        $url = MediaBox::url($path);
+
+        // 評価
+        $this->assertEquals('/storage/mbox/123/sample.jpg', $url, 'メディアコンテンツパスをメディアコンテンツURLに変換できること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換する際に値がnullの場合は、nullを返却します
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url_null()
+    {
+        // 準備
+        $path = null;
+
+        // 実行
+        $url = MediaBox::url($path);
+
+        // 評価
+        $this->assertNull($url, 'メディアコンテンツパスをメディアコンテンツURLに変換する際に値がnullの場合は、nullを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - メディアコンテンツパスをメディアコンテンツURLに変換する際に値がメディアの場合は、メディアコンテンツURLを返却します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_convert_path_to_url_media()
+    {
+        // 準備
+        $user = new class extends User {
+
+            use \Feeldee\MediaBox\Models\HasMediaBox;
+
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
+        $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => 1,
+            'directory' => '123',
+        ]);
+        $medium = Medium::factory()->create([
+            'media_box_id' => $mediaBox->id,
+            'uri' => 'sample.jpg',
+        ]);
+
+        // 実行
+        $url = MediaBox::url($medium);
+
+        // 評価
+        $this->assertEquals('/storage/mbox/123/sample.jpg', $url, 'メディアコンテンツパスをメディアコンテンツURLに変換する際に値がメディアの場合は、メディアコンテンツURLを返却します');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - 値にHTMLが含まれる場合に、その中からimgタグを検出して、src属性にメディアコンテンツが含まれる場合は相互変換されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_hook_html()
+    {
+
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+        $profile = Profile::create([
+            'user_id' => 1,
+            'nickname' => 'テストプロファイル',
+            'title' => 'テストプロファイル',
+        ]);
+        $html = '<p><img src="/storage/mbox/123/sample.jpg" /></p><p><img src="http://example.com/other/sample.jpg" /></p>';
+        $value = '<p><img src="/mbox/123/sample.jpg" /></p><p><img src="http://example.com/other/sample.jpg" /></p>';
+
+        // 実行
+        $post = $profile->posts()->create([
+            'title' => 'テスト投稿',
+            'post_date' => now(),
+            'value' => $html,
+        ]);
+
+        // 評価
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => 'テスト投稿',
+            'value' => $value,
+        ]);
+        $this->assertEquals($html, $post->value, '値にHTMLが含まれる場合に、その中からimgタグを検出して、src属性にメディアコンテンツが含まれる場合は相互変換されること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - 値にメディアコンテンツが含まれる場合は相互変換されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_hook_src()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+        $profile = Profile::create([
+            'user_id' => 1,
+            'nickname' => 'テストプロファイル',
+            'title' => 'テストプロファイル',
+        ]);
+        $url = '/storage/mbox/123/sample.jpg';
+        $path = '/mbox/123/sample.jpg';
+
+        // 実行
+        $post = $profile->posts()->create([
+            'title' => 'テスト投稿',
+            'post_date' => now(),
+            'thumbnail' => $url,
+        ]);
+
+        // 評価
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => 'テスト投稿',
+            'thumbnail' => $path,
+        ]);
+        $this->assertEquals($url, $post->thumbnail, '値にメディアコンテンツが含まれる場合は相互変換されること');
+    }
+
+    /**
+     * パスとURLの相互変換
+     * 
+     * - 値にメディアコンテンツが含まれない場合は、変換されないことを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#パスとURLの相互変換
+     */
+    public function test_mediaBox_hook_src_not_found()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+        $profile = Profile::create([
+            'user_id' => 1,
+            'nickname' => 'テストプロファイル',
+            'title' => 'テストプロファイル',
+        ]);
+        $url = 'http://example.com/other/sample.jpg';
+        $path = 'http://example.com/other/sample.jpg';
+
+        // 実行
+        $post = $profile->posts()->create([
+            'title' => 'テスト投稿',
+            'post_date' => now(),
+            'thumbnail' => $url,
+        ]);
+
+        // 評価
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => 'テスト投稿',
+            'thumbnail' => $path,
+        ]);
+        $this->assertEquals($url, $post->thumbnail, '値にメディアコンテンツが含まれない場合は、変換されないこと');
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Feeldee\MediaBox\Models;
 
-use Feeldee\Framework\Facades\MimeType;
-use Feeldee\Framework\Facades\Path;
 use Feeldee\Framework\Models\SetUser;
+use Feeldee\MediaBox\Facades\MimeType;
+use Feeldee\MediaBox\Facades\Path;
 use Hashids\Hashids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,11 +16,16 @@ class Medium extends Model
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
     /**
+     * メディアコンテンツURIソルトコンフィグレーションキー
+     */
+    const CONFIG_KEY_CONTENT_URI_SALT = 'mediabox.media_content_uri_salt';
+
+    /**
      * 複数代入可能な属性
      *
      * @var array
      */
-    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
+    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uploaded_at'];
 
     /**
      * 配列に追加する属性
@@ -43,7 +48,7 @@ class Medium extends Model
     {
         static::created(function (Medium $media) {
             // メディアコンテンツURI生成
-            $media->generteURI();
+            $media->generateURI();
         });
 
         static::deleted(function (Medium $media) {
@@ -73,12 +78,28 @@ class Medium extends Model
     }
 
     /**
+     * メディアコンテンツURL
+     *
+     * @return Attribute
+     */
+    protected function url(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => self::disk()->url(ltrim($this->path, '/'))
+        );
+    }
+
+    /**
      * メディアコンテンツURIを生成します。
      */
-    protected function generteURI(): void
+    protected function generateURI(): void
     {
+        if ($this->uri) {
+            // すでにURIが設定されている場合は何もしない（ユニットテストコード用）
+            return;
+        }
         $extension = MimeType::toExtension($this->content_type);
-        $salt = config('mediabox.uri_salt');
+        $salt = config(self::CONFIG_KEY_CONTENT_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない
         $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
         $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;
@@ -96,18 +117,6 @@ class Medium extends Model
     }
 
     // ========================== ここまで整理ずみ ==========================
-
-    /**
-     * ソース
-     *
-     * @return Attribute
-     */
-    protected function src(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => MediaBox::url($this->path)
-        );
-    }
 
     /**
      * メディアファイルをダウンロードします。
