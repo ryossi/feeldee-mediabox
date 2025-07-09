@@ -254,15 +254,13 @@ class MediaBox extends Model
             // メディアの場合は、パスを返却
             return $value->path;
         }
-        if (is_string($value) && str_starts_with($value, 'http')) {
+        if (is_string($value)) {
             // メディアコンテンツURLの場合は、パスを返却
-            $base_url = self::disk()->url(self::prefix());
-            $value = parse_url($value, PHP_URL_PATH) ?? '';
-            if (str_starts_with($value, $base_url)) {
-                $path = strstr($value, self::prefix());
-                if ($path !== false) {
-                    return $path;
-                }
+            $path = parse_url($value, PHP_URL_PATH) ?? '';
+            $prefix = self::prefix();
+            $path = strstr($path, ($prefix[0] !== '/') ? ('/' . $prefix) : $prefix);
+            if ($path !== false) {
+                return $path;
             }
         }
         // その他の場合は、値を文字列に変換して返却
