@@ -2,17 +2,17 @@
 
 namespace Feeldee\MediaBox\Database\Factories;
 
-use Feeldee\MediaBox\Models\Medium;
+use Feeldee\MediaBox\Models\MediaContent;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class MediumFactory extends Factory
+class MediaContentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var class-string<\Illuminate\Database\Eloquent\Model>
      */
-    protected $model = Medium::class;
+    protected $model = MediaContent::class;
 
     /**
      * Define the model's default state.

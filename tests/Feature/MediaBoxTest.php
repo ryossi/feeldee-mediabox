@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\Profile;
 use Feeldee\MediaBox\Models\MediaBox;
-use Feeldee\MediaBox\Models\Medium;
+use Feeldee\MediaBox\Models\MediaContent;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -209,7 +209,7 @@ class MediaBoxTest extends TestCase
         $content_type = 'image/jpeg'; // メディアコンテンツタイプ
 
         // コンテンツをメディアボックスディスクにアップロードできること
-        $this->assertDatabaseHas('media', [
+        $this->assertDatabaseHas('media_contents', [
             'id' => $medium->id,
             'media_box_id' => $mediaBox->id,
             'filename' => $filename,
@@ -272,7 +272,7 @@ class MediaBoxTest extends TestCase
         $content_type = 'image/jpeg'; // メディアコンテンツタイプ
 
         // コンテンツをメディアボックスディスクにアップロードできること
-        $this->assertDatabaseHas('media', [
+        $this->assertDatabaseHas('media_contents', [
             'id' => $medium->id,
             'media_box_id' => $mediaBox->id,
             'filename' => $filename,
@@ -335,7 +335,7 @@ class MediaBoxTest extends TestCase
         $size = Storage::disk()->size($medium->path); // メディアコンテンツサイズ
 
         // コンテンツをメディアボックスディスクにアップロードできること
-        $this->assertDatabaseHas('media', [
+        $this->assertDatabaseHas('media_contents', [
             'id' => $medium->id,
             'media_box_id' => $mediaBox->id,
             'filename' => $filename,
@@ -395,7 +395,7 @@ class MediaBoxTest extends TestCase
         $height = 450; // メディアコンテンツ高さ
 
         // コンテンツをメディアボックスディスクにアップロードできること
-        $this->assertDatabaseHas('media', [
+        $this->assertDatabaseHas('media_contents', [
             'id' => $medium->id,
             'media_box_id' => $mediaBox->id,
             'filename' => $filename,
@@ -625,7 +625,7 @@ class MediaBoxTest extends TestCase
             'user_id' => 1,
             'directory' => '123',
         ]);
-        $medium = Medium::factory()->create([
+        $medium = MediaContent::factory()->create([
             'media_box_id' => $mediaBox->id,
             'filename' => 'sample.jpg',
             'uri' => 'sample.jpg',
@@ -704,7 +704,7 @@ class MediaBoxTest extends TestCase
             'user_id' => 1,
             'directory' => '123',
         ]);
-        $medium = Medium::factory()->create([
+        $medium = MediaContent::factory()->create([
             'media_box_id' => $mediaBox->id,
             'uri' => 'sample.jpg',
         ]);

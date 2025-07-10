@@ -92,7 +92,7 @@ class MediaBox extends Model
 
         static::deleted(function (MediaBox $mediaBox) {
             // メディアボックスに紐づくメディアコンテンツを削除
-            $mediaBox->media()->each(function (Medium $medium) {
+            $mediaBox->media()->each(function (MediaContent $medium) {
                 // メディアコンテンツ削除
                 $medium->delete();
             });
@@ -150,10 +150,10 @@ class MediaBox extends Model
      * @param string|null $filename メディアファイル名（デフォルトは、メディアコンテンツのオリジナルファイル名）
      * @param string|null $subdirectory メディアサブディレクトリ（デフォルトは、メディアコンテンツアップロード日時のyyyyMMdd形式）
      * @param mixed $uploaded_at アップロード日時（デフォルトは、システム日時）
-     * @return Medium メディウム
+     * @return MediaContent メディアコンテンツ
      * @throws ApplicationException メディアボックスの使用済サイズが最大サイズを超えた場合
      */
-    public function upload(mixed $data, string|null $filename = null, string|null $subdirectory = null,  Carbon|string|null $uploaded_at = null): Medium
+    public function upload(mixed $data, string|null $filename = null, string|null $subdirectory = null,  Carbon|string|null $uploaded_at = null): MediaContent
     {
         // アップロード日時のデフォルトはシステム日時
         if ($uploaded_at === null) {
@@ -235,7 +235,7 @@ class MediaBox extends Model
      *
      * 値がnullの場合は、nullを返却します。
      * 
-     * 値がメディアの場合は、メディアコンテンツパスを返却します。
+     * 値がメディアコンテンツの場合は、メディアコンテンツパスを返却します。
      * 
      * 値がメディアコンテンツURLの場合は、メディアコンテンツパスの部分のみを返却します。
      *
@@ -250,7 +250,7 @@ class MediaBox extends Model
             // 値がnullの場合は、nullを返却
             return null;
         }
-        if ($value instanceof Medium) {
+        if ($value instanceof MediaContent) {
             // メディアの場合は、パスを返却
             return $value->path;
         }
@@ -272,7 +272,7 @@ class MediaBox extends Model
      * 
      * 値がnullの場合は、nullを返却します。
      * 
-     * 値がメディアの場合は、メディアコンテンツURLを返却します。
+     * 値がメディアコンテンツの場合は、メディアコンテンツURLを返却します。
      * 
      * 値がメディアコンテンツパスの場合は、メディアボックスディスクを利用してメディアコンテンツURLに変換して返却します。
      * 
@@ -287,7 +287,7 @@ class MediaBox extends Model
             // 値がnullの場合は、nullを返却
             return null;
         }
-        if ($value instanceof Medium) {
+        if ($value instanceof MediaContent) {
             // メディアの場合は、URLを返却
             return $value->url;
         }
@@ -353,7 +353,7 @@ class MediaBox extends Model
      */
     public function media()
     {
-        return $this->hasMany(Medium::class);
+        return $this->hasMany(MediaContent::class);
     }
 
     /**
@@ -400,9 +400,9 @@ class MediaBox extends Model
      * パスに一致するメディアが存在しない場合は、nullを返却します。
      * 
      * @param  ?string $path パス
-     * @return Medium|null メディアまたはnull
+     * @return MediaContent|null メディアコンテンツまたはnull
      */
-    public function find(?string $path): Medium|null
+    public function find(?string $path): MediaContent|null
     {
         if (empty($path) || strpos($path, self::prefix()) === false) {
             return null;

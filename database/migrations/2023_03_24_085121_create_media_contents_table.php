@@ -13,11 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('media', function (Blueprint $table) {
+        Schema::create('media_contents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('media_box_id')->comment('メディアボックスID')->constrained()->cascadeOnDelete();
             $table->string('subdirectory')->nullable()->comment('メディアサブディレクトリ');
-            $table->string('filename')->comment('メディアファイル名');
+            $table->string('filename')->comment('メディアコンテンツファイル名');
             $table->integer('size')->default(0)->comment('メディアコンテンツサイズ');
             $table->integer('width')->nullable()->comment('メディアコンテンツ幅');
             $table->integer('height')->nullable()->comment('メディアコンテンツ高さ');

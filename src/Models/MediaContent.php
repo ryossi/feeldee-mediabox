@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class Medium extends Model
+class MediaContent extends Model
 {
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
@@ -46,12 +46,12 @@ class Medium extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (Medium $media) {
+        static::created(function (MediaContent $media) {
             // メディアコンテンツURI生成
             $media->generateURI();
         });
 
-        static::deleted(function (Medium $media) {
+        static::deleted(function (MediaContent $media) {
             // メディアコンテンツファイル削除
             $media->deleteFile();
         });
