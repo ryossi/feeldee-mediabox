@@ -92,7 +92,7 @@ class MediaBox extends Model
 
         static::deleted(function (MediaBox $mediaBox) {
             // メディアボックスに紐づくメディアコンテンツを削除
-            $mediaBox->media()->each(function (MediaContent $medium) {
+            $mediaBox->mediaContents()->each(function (MediaContent $medium) {
                 // メディアコンテンツ削除
                 $medium->delete();
             });
@@ -137,8 +137,16 @@ class MediaBox extends Model
     protected function usedSize(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => $this->media()->sum('size'),
+            get: fn($value) => $this->mediaContents()->sum('size'),
         );
+    }
+
+    /**
+     * メディアコンテンツリスト
+     */
+    public function mediaContents()
+    {
+        return $this->hasMany(MediaContent::class);
     }
 
     /**
@@ -198,8 +206,8 @@ class MediaBox extends Model
             $content_type = $image->mime();
         }
 
-        // メディア作成
-        $medium = $this->media()->create([
+        // メディアコンテンツ作成
+        $mediumContent = $this->mediaContents()->create([
             'width' => $width,
             'height' => $height,
             'content_type' => $content_type,
@@ -209,25 +217,25 @@ class MediaBox extends Model
         ]);
 
         // ファイルアップロード
-        self::disk()->put($medium->path, $image->stream());
+        self::disk()->put($mediumContent->path, $image->stream());
 
         // メディアコンテンツサイズ
         try {
-            $medium->size = self::disk()->size($medium->path);
-            if (($this->used_size + $medium->size) > $this->max_size * 1024 * 1024) {
+            $mediumContent->size = self::disk()->size($mediumContent->path);
+            if (($this->used_size + $mediumContent->size) > $this->max_size * 1024 * 1024) {
                 // メディアボックス使用済サイズとアップロードするコンテンツの合計がメディアボックス最大サイズ以上の場合
                 throw new ApplicationException(83002, [
                     'used_size' => $this->used_size,
                     'max_size' => $this->max_size,
                 ]);
             }
-            $medium->save();
+            $mediumContent->save();
         } catch (Exception $e) {
-            self::disk()->delete($medium->path);
+            self::disk()->delete($mediumContent->path);
             throw $e;
         }
 
-        return $medium;
+        return $mediumContent;
     }
 
     /**
@@ -349,14 +357,6 @@ class MediaBox extends Model
     }
 
     /**
-     * メディアボックスに格納されているメディアリスト取得
-     */
-    public function media()
-    {
-        return $this->hasMany(MediaContent::class);
-    }
-
-    /**
      * メディアボックスからメディアリストを検索します。
      * メディアリストは、アップロード日時降順で取得します。
      * 
@@ -365,7 +365,7 @@ class MediaBox extends Model
      */
     public function search($filter = ""): Collection
     {
-        $query = $this->media();
+        $query = $this->mediaContents();
 
         // 条件式
         $conditions = explode('&', $filter);
@@ -408,6 +408,6 @@ class MediaBox extends Model
             return null;
         }
         $basename = basename($path);
-        return $this->media()->uri($basename)->first();
+        return $this->mediaContents()->uri($basename)->first();
     }
 }
