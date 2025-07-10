@@ -25,6 +25,6 @@ return [
     |--------------------------------------------------------------------------
     |
     */
-    // メディアコンテンツURIソルト
-    'media_content_uri_salt' => env('FEELDEE_MEDIA_CONTENT_URI_SALT', env('APP_KEY', '')),
+    // URIソルト
+    'uri_salt' => env('FEELDEE_MEDIA_BOX_URI_SALT', env('APP_KEY', '')),
 ];

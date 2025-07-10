@@ -16,9 +16,9 @@ class MediaContent extends Model
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
     /**
-     * メディアコンテンツURIソルトコンフィグレーションキー
+     * URIソルトコンフィグレーションキー
      */
-    const CONFIG_KEY_CONTENT_URI_SALT = 'mediabox.media_content_uri_salt';
+    const CONFIG_KEY_URI_SALT = 'mediabox.uri_salt';
 
     /**
      * 複数代入可能な属性
@@ -99,7 +99,7 @@ class MediaContent extends Model
             return;
         }
         $extension = MimeType::toExtension($this->content_type);
-        $salt = config(self::CONFIG_KEY_CONTENT_URI_SALT);
+        $salt = config(self::CONFIG_KEY_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない
         $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
         $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;
