@@ -11,14 +11,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class Medium extends Model
+class MediaContent extends Model
 {
     use HasFactory, SetUser, MediaBoxFilesystemAdapter;
 
     /**
-     * メディアコンテンツURIソルトコンフィグレーションキー
+     * URIソルトコンフィグレーションキー
      */
-    const CONFIG_KEY_CONTENT_URI_SALT = 'mediabox.media_content_uri_salt';
+    const CONFIG_KEY_URI_SALT = 'mediabox.uri_salt';
 
     /**
      * 複数代入可能な属性
@@ -46,12 +46,12 @@ class Medium extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (Medium $media) {
+        static::created(function (MediaContent $media) {
             // メディアコンテンツURI生成
             $media->generateURI();
         });
 
-        static::deleted(function (Medium $media) {
+        static::deleted(function (MediaContent $media) {
             // メディアコンテンツファイル削除
             $media->deleteFile();
         });
@@ -99,7 +99,7 @@ class Medium extends Model
             return;
         }
         $extension = MimeType::toExtension($this->content_type);
-        $salt = config(self::CONFIG_KEY_CONTENT_URI_SALT);
+        $salt = config(self::CONFIG_KEY_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない
         $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
         $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;
