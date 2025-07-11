@@ -28,22 +28,4 @@ class ImageTextService
         }
         return (string)Image::make($text)->resize($width, $height)->encode('data-url', $quality);
     }
-
-    /**
-     * イメージテキストかどうかを判定します。
-     * 
-     * @param ?string $text 評価対象テキスト
-     * @return bool イメージテキストの場合true、以外はfalse
-     */
-    public function isImageText(?string $text): bool
-    {
-        if (empty($text)) {
-            return false;
-        }
-        if (50 > strlen($text)) {
-            return false;
-        }
-        $substrBase64 = substr($text, 0, 50);
-        return preg_match('/data\:image\/.*\;base64\,/', $substrBase64);
-    }
 }
