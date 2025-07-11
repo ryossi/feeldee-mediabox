@@ -11,6 +11,7 @@ use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
 use Feeldee\MediaBox\Facades\Path;
+use Hashids\Hashids;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
@@ -59,14 +60,29 @@ class MediaBox extends Model
     const USER_RELATION_TYPE_COMPOSITION = 'composition';
 
     /**
+     * URIソルトコンフィグレーションキー
+     */
+    const CONFIG_KEY_URI_SALT = 'mediabox.uri_salt';
+
+    /**
+     * サポートMIMEマップマップコンフィグレーションキー
+     */
+    const CONFIG_KEY_SUPPORT_MIME_MAP = 'mediabox.support_mime_map';
+
+    /**
      * メディアボックスが既に存在しているエラーコード
      */
     const ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS = 83001;
 
     /**
-     * メディアボックスの使用済サイズが最大サイズを超えたエラーコード
+     * メディアボックスに空き容量がないエラーコード
      */
     const ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED = 83002;
+
+    /**
+     * メディアボックスでサポートされていないMIMEタイプエラーコード
+     */
+    const ERROR_CODE_MEDIA_BOX_UNSUPPORTED_MIME_TYPE = 83003;
 
     protected $fillable = ['user_id', 'directory', 'max_size'];
 
@@ -85,7 +101,7 @@ class MediaBox extends Model
         static::creating(function (MediaBox $mediaBox) {
             // メディアボックス存在チェック
             if (MediaBox::where('user_id', $mediaBox->user_id)->exists()) {
-                throw new ApplicationException(83001, [
+                throw new ApplicationException(self::ERROR_CODE_MEDIA_BOX_ALREADY_EXISTS, [
                     'user_id' => $mediaBox->user_id,
                 ]);
             }
@@ -180,7 +196,7 @@ class MediaBox extends Model
      * @param string|null $subdirectory メディアサブディレクトリ（デフォルトは、メディアコンテンツアップロード日時のyyyyMMdd形式）
      * @param mixed $uploaded_at アップロード日時（デフォルトは、システム日時）
      * @return MediaContent メディアコンテンツ
-     * @throws ApplicationException メディアボックスの使用済サイズが最大サイズを超えた場合
+     * @throws ApplicationException メディアボックスに空き容量がない場合
      */
     public function upload(mixed $data, string|null $filename = null, string|null $subdirectory = null,  Carbon|string|null $uploaded_at = null): MediaContent
     {
@@ -226,6 +242,20 @@ class MediaBox extends Model
         } else {
             $content_type = $image->mime();
         }
+        // メディアコンテンツURI
+        $support_mime_map = config(self::CONFIG_KEY_SUPPORT_MIME_MAP, []);
+        $extension = isset($support_mime_map[$this->content_type]) ? $support_mime_map[$this->content_type] : false;
+        if (!$extension) {
+            // メディアボックスでサポートされていないMIMEタイプ
+            throw new ApplicationException(
+                MediaBox::ERROR_CODE_MEDIA_BOX_UNSUPPORTED_MIME_TYPE,
+                ['mime_type' => $this->content_type]
+            );
+        }
+        $salt = config(self::CONFIG_KEY_URI_SALT);
+        // 注）URLエンコード対象の文字は使用しない
+        $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
+        $uri = $hashids->encode($this->id, strtotime($uploaded_at)) . '.' . $extension;
 
         // メディアコンテンツ作成
         $mediumContent = $this->mediaContents()->create([
@@ -234,6 +264,7 @@ class MediaBox extends Model
             'content_type' => $content_type,
             'subdirectory' => $subdirectory,
             'filename' => $filename,
+            'uri' => $uri,
             'uploaded_at' => $uploaded_at,
         ]);
 
@@ -245,7 +276,7 @@ class MediaBox extends Model
             $mediumContent->size = self::disk()->size($mediumContent->path);
             if (($this->used_size + $mediumContent->size) > $this->max_size * 1024 * 1024) {
                 // メディアボックス使用済サイズとアップロードするコンテンツの合計がメディアボックス最大サイズ以上の場合
-                throw new ApplicationException(83002, [
+                throw new ApplicationException(self::ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED, [
                     'used_size' => $this->used_size,
                     'max_size' => $this->max_size,
                 ]);

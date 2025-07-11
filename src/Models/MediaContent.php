@@ -3,9 +3,7 @@
 namespace Feeldee\MediaBox\Models;
 
 use Feeldee\Framework\Models\SetUser;
-use Feeldee\MediaBox\Facades\MimeType;
 use Feeldee\MediaBox\Facades\Path;
-use Hashids\Hashids;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,11 +12,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class MediaContent extends Model
 {
     use HasFactory, SetUser;
-
-    /**
-     * URIソルトコンフィグレーションキー
-     */
-    const CONFIG_KEY_URI_SALT = 'mediabox.uri_salt';
 
     /**
      * 複数代入可能な属性
@@ -46,11 +39,6 @@ class MediaContent extends Model
      */
     protected static function booted(): void
     {
-        static::created(function (MediaContent $media) {
-            // メディアコンテンツURI生成
-            $media->generateURI();
-        });
-
         static::deleted(function (MediaContent $media) {
             // メディアコンテンツファイル削除
             $media->deleteFile();
@@ -87,23 +75,6 @@ class MediaContent extends Model
         return Attribute::make(
             get: fn($value) => $this->mediaBox->disk()->url(ltrim($this->path, '/'))
         );
-    }
-
-    /**
-     * メディアコンテンツURIを生成します。
-     */
-    protected function generateURI(): void
-    {
-        if ($this->uri) {
-            // すでにURIが設定されている場合は何もしない（ユニットテストコード用）
-            return;
-        }
-        $extension = MimeType::toExtension($this->content_type);
-        $salt = config(self::CONFIG_KEY_URI_SALT);
-        // 注）URLエンコード対象の文字は使用しない
-        $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');
-        $this->uri = $hashids->encode($this->id, strtotime("now")) . '.' . $extension;
-        $this->save(['timestamps' => false]);
     }
 
     /**
