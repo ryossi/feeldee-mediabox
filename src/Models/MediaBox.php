@@ -12,11 +12,12 @@ use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
 use Feeldee\MediaBox\Facades\Path;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 
 class MediaBox extends Model
 {
-    use HasFactory, SetUser, MediaBoxFilesystemAdapter;
+    use HasFactory, SetUser;
 
     /**
      * メディアボックスプレフィックスコンフィグレーションキー
@@ -102,14 +103,6 @@ class MediaBox extends Model
     }
 
     /**
-     * メディアボックスプレフィックス
-     */
-    public static function prefix(): string
-    {
-        return config(self::CONFIG_KEY_PREFIX);
-    }
-
-    /**
      * メディアボックスディレクトリ
      *
      * @return Attribute
@@ -147,6 +140,34 @@ class MediaBox extends Model
     public function mediaContents()
     {
         return $this->hasMany(MediaContent::class);
+    }
+
+    /**
+     * メディアボックスディスク
+     * 
+     * メディアボックスにアップロードされたメディアコンテンツの保存先です。
+     * 
+     * @return FilesystemAdapter
+     */
+    public static function disk(): \Illuminate\Filesystem\FilesystemAdapter
+    {
+        if (config(MediaBox::CONFIG_KEY_DISK)) {
+            return Storage::disk(config(MediaBox::CONFIG_KEY_DISK));
+        }
+        // デフォルトのストレージディスクを使用
+        return Storage::disk();
+    }
+
+    /**
+     * メディアボックスプレフィックス
+     * 
+     * メディアボックス全体を通じて使用するルートディレクトリです。
+     * 
+     * @return string プレフィックス
+     */
+    public static function prefix(): string
+    {
+        return config(self::CONFIG_KEY_PREFIX);
     }
 
     /**

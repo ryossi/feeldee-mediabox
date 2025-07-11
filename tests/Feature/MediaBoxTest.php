@@ -19,6 +19,45 @@ class MediaBoxTest extends TestCase
     use RefreshDatabase;
 
     /**
+     * メディアボックスディスク設定
+     * 
+     * - メディアボックスディスクの初期値は、Laravelのデフォルトストレージディスクであることを確認します。
+     *
+     * - @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックスディスク設定
+     */
+    public function test_mediaBox_disk_default()
+    {
+        // 実行
+        $disk = MediaBox::disk();
+
+        // 評価
+        $this->assertEquals(storage_path('app'), $disk->getConfig()['root'], 'メディアボックスディスクの初期値は、Laravelのデフォルトストレージディスクであること');
+    }
+
+    /**
+     * メディアボックスディスク設定
+     * 
+     * - メディアボックスディスクコンフィグレーションでメディアボックスディスクを指定した場合は、そちらのディスクが優先されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックスディスク設定
+     */
+    public function test_mediaBox_disk_config()
+    {
+        // 準備
+        Config::set('filesystems.disks.mbox', [
+            'driver' => 'local',
+            'root' => storage_path('app/mbox'),
+        ]);
+        Config::set('mediabox.disk', 'mbox');
+
+        // 実行
+        $disk = MediaBox::disk();
+
+        // 評価
+        $this->assertEquals(storage_path('app/mbox'), $disk->getConfig()['root'], 'メディアボックスディスクコンフィグレーションでメディアボックスディスクを指定した場合は、そちらのディスクが優先されること');
+    }
+
+    /**
      * メディアボックス作成
      * 
      * - ユーザのメディアボックスを作成できることを確認します。
