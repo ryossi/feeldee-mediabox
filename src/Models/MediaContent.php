@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaContent extends Model
 {
-    use HasFactory, SetUser, MediaBoxFilesystemAdapter;
+    use HasFactory, SetUser;
 
     /**
      * URIソルトコンフィグレーションキー
@@ -85,7 +85,7 @@ class MediaContent extends Model
     protected function url(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => self::disk()->url(ltrim($this->path, '/'))
+            get: fn($value) => $this->mediaBox->disk()->url(ltrim($this->path, '/'))
         );
     }
 
