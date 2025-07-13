@@ -27,4 +27,23 @@ return [
     */
     // URIソルト
     'uri_salt' => env('FEELDEE_MEDIA_BOX_URI_SALT', env('APP_KEY', '')),
+    // サポートMIMEマップ
+    'support_mime_map' => [
+        'image/bmp'                                                                 => 'bmp',
+        'image/x-bmp'                                                               => 'bmp',
+        'image/x-bitmap'                                                            => 'bmp',
+        'image/x-xbitmap'                                                           => 'bmp',
+        'image/x-win-bitmap'                                                        => 'bmp',
+        'image/x-windows-bmp'                                                       => 'bmp',
+        'image/ms-bmp'                                                              => 'bmp',
+        'image/x-ms-bmp'                                                            => 'bmp',
+        'image/gif'                                                                 => 'gif',
+        'image/jpeg'                                                                => 'jpeg',
+        'image/pjpeg'                                                               => 'jpeg',
+        'image/png'                                                                 => 'png',
+        'image/x-png'                                                               => 'png',
+        'image/svg+xml'                                                             => 'svg',
+        'image/tiff'                                                                => 'tiff',
+        'image/webp'                                                                => 'webp',
+    ]
 ];
