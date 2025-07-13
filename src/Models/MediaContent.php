@@ -3,35 +3,18 @@
 namespace Feeldee\MediaBox\Models;
 
 use Feeldee\Framework\Models\SetUser;
-use Feeldee\MediaBox\Facades\Path;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaContent extends Model
 {
     use HasFactory, SetUser;
 
-    /**
-     * 複数代入可能な属性
-     *
-     * @var array
-     */
     protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
 
-    /**
-     * 配列に追加する属性
-     * 
-     * @var array
-     */
     protected $appends = ['src'];
 
-    /**
-     * 配列に表示する属性
-     *
-     * @var array
-     */
     protected $visible = ['id', 'size', 'width', 'height', 'content_type', 'src', 'uploaded_at'];
 
     public static function create(array $attributes = [])
