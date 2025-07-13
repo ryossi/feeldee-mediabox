@@ -5,14 +5,16 @@ namespace Feeldee\MediaBox\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * Feeldee\MediaBox\Facades\ImageText
+ * Feeldee\MediaBox\Facades\Image
  *
+ * @method static \Intervention\Image\Image create(string $data)
  * @method static string resize(string $text, mixed $width = null, mixed $height = null, int $quality = 90)
+ * @method static string mimeType(string $data)
  */
-class ImageText extends Facade
+class Image extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return \Feeldee\Framework\Services\ImageTextService::class;
+        return \Feeldee\MediaBox\Services\ImageService::class;
     }
 }
