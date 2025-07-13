@@ -11,7 +11,6 @@ use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
 use Feeldee\MediaBox\Facades\Image;
-use Feeldee\MediaBox\Facades\Path;
 use Hashids\Hashids;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -126,7 +125,7 @@ class MediaBox extends Model
     protected function directory(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => Path::combine(self::prefix(), $value),
+            get: fn($value) => (str_starts_with(self::prefix(), DIRECTORY_SEPARATOR) ? self::prefix() : DIRECTORY_SEPARATOR . self::prefix()) . DIRECTORY_SEPARATOR . (str_starts_with($value, DIRECTORY_SEPARATOR) ? ltrim($value, DIRECTORY_SEPARATOR) : $value),
         );
     }
 

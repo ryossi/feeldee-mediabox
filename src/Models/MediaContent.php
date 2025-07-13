@@ -66,7 +66,9 @@ class MediaContent extends Model
     protected function path(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => Path::combine($this->mediaBox->directory, $this->subdirectory, $this->uri)
+            get: fn($value) => rtrim($this->mediaBox->directory, DIRECTORY_SEPARATOR)
+                . (isset($this->subdirectory) && $this->subdirectory !== '' ? DIRECTORY_SEPARATOR . trim($this->subdirectory, DIRECTORY_SEPARATOR) : '')
+                . DIRECTORY_SEPARATOR . ltrim($this->uri, DIRECTORY_SEPARATOR)
         );
     }
 
