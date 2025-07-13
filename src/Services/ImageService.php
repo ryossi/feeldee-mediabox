@@ -18,26 +18,6 @@ class ImageService
     }
 
     /**
-     * イメージテキストをリサイズします。
-     * 
-     * @param string $text イメージテキスト
-     * @param mixed $width 横幅
-     * @param mixed $height 縦幅
-     * @param int $quality 解像度（デフォルト90%）
-     * @return string 変換後のイメージテキスト
-     */
-    public function resize(string $text, mixed $width = null, mixed $height = null, int $quality = 90): string
-    {
-        if ($width !== null && $height === null) {
-            return (string)Image::make($text)->widen($width)->encode('data-url', $quality);
-        }
-        if ($width === null && $height !== null) {
-            return (string)Image::make($text)->heighten($height)->encode('data-url', $quality);
-        }
-        return (string)Image::make($text)->resize($width, $height)->encode('data-url', $quality);
-    }
-
-    /**
      * 画像データまたはファイルパスからMIMEタイプを取得します。
      *
      * @param string $data ファイルパスまたはBase64エンコード画像データ
@@ -64,5 +44,25 @@ class ImageService
         }
 
         return null;
+    }
+
+    /**
+     * 画像データをリサイズします。
+     * 
+     * @param string $data ファイルパスまたはBase64エンコード画像データ
+     * @param mixed $width 横幅
+     * @param mixed $height 縦幅
+     * @param int $quality 解像度（デフォルト90%）
+     * @return \Intervention\Image\Image 変換後の画像データ
+     */
+    public function resize(string $data, mixed $width = null, mixed $height = null, int $quality = 90)
+    {
+        if ($width !== null && $height === null) {
+            return Image::make($data)->widen($width)->encode('data-url', $quality);
+        }
+        if ($width === null && $height !== null) {
+            return Image::make($data)->heighten($height)->encode('data-url', $quality);
+        }
+        return Image::make($data)->resize($width, $height)->encode('data-url', $quality);
     }
 }

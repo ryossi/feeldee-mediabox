@@ -35,6 +35,12 @@ class MediaBoxServiceProvider extends ServiceProvider
                 [\Feeldee\MediaBox\Hooks\URL::class]
             )
         );
+
+        // ファサードのエイリアスを登録 
+        AliasLoader::getInstance()->alias(
+            'Image',
+            \Feeldee\MediaBox\Facades\Image::class
+        );
     }
 
     /**
