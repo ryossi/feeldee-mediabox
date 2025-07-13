@@ -10,11 +10,11 @@ use Carbon\Carbon;
 use Exception;
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\SetUser;
+use Feeldee\MediaBox\Facades\Image;
 use Feeldee\MediaBox\Facades\Path;
 use Hashids\Hashids;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 
 class MediaBox extends Model
 {
@@ -208,8 +208,26 @@ class MediaBox extends Model
             $uploaded_at = Carbon::parse($uploaded_at);
         }
 
+        // メディアコンテンツタイプ
+        if ($data instanceof UploadedFile) {
+            $content_type = $data->getMimeType();
+        } else {
+            $content_type = Image::mimeType($data);
+        }
+
+        // 拡張子取得
+        $support_mime_map = config(self::CONFIG_KEY_SUPPORT_MIME_MAP, []);
+        $extension = isset($support_mime_map[$content_type]) ? $support_mime_map[$content_type] : false;
+        if (!$extension) {
+            // メディアボックスでサポートされていないMIMEタイプ
+            throw new ApplicationException(
+                MediaBox::ERROR_CODE_MEDIA_BOX_UNSUPPORTED_MIME_TYPE,
+                ['mime_type' => $content_type]
+            );
+        }
+
         // イメージ変換
-        $image = Image::make($data);
+        $image = Image::create($data);
 
         // 画像の最大幅をコンフィグレーションで制限
         $max_width = config(MediaBox::CONFIG_KEY_UPLOAD_IMAGE_MAX_WIDTH);
@@ -236,22 +254,7 @@ class MediaBox extends Model
         // メディアコンテンツ高さ
         $height = $image->height();
 
-        // メディアコンテンツタイプ
-        if ($data instanceof UploadedFile) {
-            $content_type = $data->getMimeType();
-        } else {
-            $content_type = $image->mime();
-        }
         // メディアコンテンツURI
-        $support_mime_map = config(self::CONFIG_KEY_SUPPORT_MIME_MAP, []);
-        $extension = isset($support_mime_map[$this->content_type]) ? $support_mime_map[$this->content_type] : false;
-        if (!$extension) {
-            // メディアボックスでサポートされていないMIMEタイプ
-            throw new ApplicationException(
-                MediaBox::ERROR_CODE_MEDIA_BOX_UNSUPPORTED_MIME_TYPE,
-                ['mime_type' => $this->content_type]
-            );
-        }
         $salt = config(self::CONFIG_KEY_URI_SALT);
         // 注）URLエンコード対象の文字は使用しない
         $hashids = new Hashids($salt, 240, 'abcdefghijklmnopqrstuvwxyz1234567890_-');

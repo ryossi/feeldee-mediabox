@@ -18,7 +18,7 @@ class MediaContent extends Model
      *
      * @var array
      */
-    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uploaded_at'];
+    protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
 
     /**
      * 配列に追加する属性
@@ -33,6 +33,11 @@ class MediaContent extends Model
      * @var array
      */
     protected $visible = ['id', 'size', 'width', 'height', 'content_type', 'src', 'uploaded_at'];
+
+    public static function create(array $attributes = [])
+    {
+        throw new \Exception("Please use the media box upload method instead.");
+    }
 
     /**
      * モデルの「起動」メソッド

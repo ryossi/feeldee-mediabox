@@ -203,6 +203,119 @@ class MediaBoxTest extends TestCase
     }
 
     /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_has_mediaBox_true()
+    {
+        // 準備
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        // 実行
+        $hasMediaBox = $user->hasMediaBox();
+
+        // 評価
+        $this->assertTrue($hasMediaBox, 'ユーザがメディアボックスを持っていることを確認できること');
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_has_mediaBox_false()
+    {
+        // 準備
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+
+        // 実行
+        $hasMediaBox = $user->hasMediaBox();
+
+        // 評価
+        $this->assertFalse($hasMediaBox, 'ユーザがメディアボックスを持っていないことを確認できること');
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - コンフィグレーションでメディアボックスとの関連付けタイプを"composition"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスも同時に削除することができることを確認します。
+     *
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_mediaBox_composition()
+    {
+        // 準備
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_COMPOSITION]);
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseCount('media_boxes', 1);
+
+        // 実行
+        $user->delete();
+
+        // 評価
+        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスも同時に削除されること
+        $this->assertDatabaseCount('media_boxes', 0);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    /**
+     * ユーザEloquentモデルへのメディアボックス関連付け
+     * 
+     * - コンフィグレーションでメディアボックスとユーザとの関連付けタイプを"aggregation"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスは削除されないことを確認します。
+     *
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     */
+    public function test_user_mediaBox_aggregation()
+    {
+        // 準備
+        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_AGGREGATION]);
+        $user = User::create([
+            'name' => 'テストユーザ',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $this->actingAs($user);
+        MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseCount('media_boxes', 1);
+
+        // 実行
+        $user->delete();
+
+        // 評価
+        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスは削除されないこと
+        $this->assertDatabaseCount('media_boxes', 1);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    /**
      * コンテンツアップロード
      * 
      * - コンテンツをメディアボックスディスクにアップロードできることを確認します。
@@ -485,116 +598,127 @@ class MediaBoxTest extends TestCase
     }
 
     /**
-     * ユーザEloquentモデルへのメディアボックス関連付け
+     * コンテンツアップロード
      * 
-     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * - メディアコンテンツURIが、拡張子を除いた部分が240文字のユニークな文字列であることを確認します。
+     * - メディアコンテンツURIは、アップロードコンテンツから自動的に生成されることを確認します。
+     * - 拡張子は、サポートMIMEマップコンフィグレーションの範囲内でメディアコンテンツタイプから自動判断されることを確認します。
      * 
-     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
      */
-    public function test_user_has_mediaBox_true()
+    public function test_mediaBox_upload_uri()
     {
         // 準備
-        $user = User::create([
-            'name' => 'テストユーザ',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
         $this->actingAs($user);
-        MediaBox::factory()->create([
+        $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
+        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
-        $hasMediaBox = $user->hasMediaBox();
+        $media = $mediaBox->upload($filePath);
 
         // 評価
-        $this->assertTrue($hasMediaBox, 'ユーザがメディアボックスを持っていることを確認できること');
+        $uriWithoutExtension = pathinfo($media->uri, PATHINFO_FILENAME);
+        $this->assertEquals(240, strlen($uriWithoutExtension), 'メディアコンテンツURIが、拡張子を除いた部分が240文字のユニークな文字列であること');
+        $this->assertDatabaseHas('media_contents', [
+            'id' => $media->id,
+            'media_box_id' => $mediaBox->id,
+            'uri' => $media->uri, // URIが自動生成されていること
+        ]);
+        $uriExtension = pathinfo($media->uri, PATHINFO_EXTENSION);
+        $this->assertEquals('jpeg', $uriExtension, '拡張子は、サポートMIMEマップコンフィグレーションの範囲内でメディアコンテンツタイプから自動判断されること');
     }
 
     /**
-     * ユーザEloquentモデルへのメディアボックス関連付け
+     * コンテンツアップロード
      * 
-     * - ユーザがメディアボックスを持っているかどうかについて確認することができることを確認します。
+     * - 同一画像でもアプリケーション毎に異なるURIが生成され、URIからの画像の特定を抑止することを確認します。
      * 
-     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
      */
-    public function test_user_has_mediaBox_false()
+    public function test_mediaBox_upload_uri_app_unique()
     {
         // 準備
-        $user = User::create([
-            'name' => 'テストユーザ',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
         $this->actingAs($user);
+        $mediaBox = MediaBox::factory()->create([
+            'user_id' => $user->id,
+        ]);
+        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
-        $hasMediaBox = $user->hasMediaBox();
+        Config::set(MediaBox::CONFIG_KEY_URI_SALT, 'app1');
+        $media1 = $mediaBox->upload($filePath);
+        Config::set(MediaBox::CONFIG_KEY_URI_SALT, 'app2');
+        $media2 = $mediaBox->upload($filePath);
 
         // 評価
-        $this->assertFalse($hasMediaBox, 'ユーザがメディアボックスを持っていないことを確認できること');
+        $this->assertNotEquals($media1->uri, $media2->uri, '同一画像でもアプリケーション毎に異なるURIが生成され、URIからの画像の特定を抑止すること');
+        $this->assertDatabaseHas('media_contents', [
+            'id' => $media1->id,
+            'media_box_id' => $mediaBox->id,
+            'uri' => $media1->uri, // app1のURI
+        ]);
+        $this->assertDatabaseHas('media_contents', [
+            'id' => $media2->id,
+            'media_box_id' => $mediaBox->id,
+            'uri' => $media2->uri, // app2のURI
+        ]);
     }
 
     /**
-     * ユーザEloquentモデルへのメディアボックス関連付け
+     * コンテンツアップロード
      * 
-     * - コンフィグレーションでメディアボックスとの関連付けタイプを"composition"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスも同時に削除することができることを確認します。
-     *
-     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
+     * - サポートMIMEマップに存在しないコンテンツタイプの場合は、メディアボックスでサポートされていないMIMEタイプエラーが発生することを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#コンテンツアップロード
      */
-    public function test_user_mediaBox_composition()
+    public function test_mediaBox_upload_unsupported_mime_type()
     {
         // 準備
-        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_COMPOSITION]);
-        $user = User::create([
-            'name' => 'テストユーザ',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
+        Storage::fake();
+        $user = new class extends User {
+            public function getIdAttribute()
+            {
+                return 1;
+            }
+            public function getNameAttribute()
+            {
+                return 'test_user';
+            }
+        };
         $this->actingAs($user);
-        MediaBox::factory()->create([
+        $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $this->assertDatabaseCount('media_boxes', 1);
+        $filePath = __DIR__ . '/test_files/test_unsupported.txt'; // テスト用の非対応ファイルパス
 
         // 実行
-        $user->delete();
-
-        // 評価
-        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスも同時に削除されること
-        $this->assertDatabaseCount('media_boxes', 0);
-        $this->assertDatabaseCount('users', 0);
-    }
-
-    /**
-     * ユーザEloquentモデルへのメディアボックス関連付け
-     * 
-     * - コンフィグレーションでメディアボックスとユーザとの関連付けタイプを"aggregation"にすることにより、ユーザEloquentモデルがアプリケーションで削除された場合には、関連付けされた全てのメディアボックスは削除されないことを確認します。
-     *
-     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#ユーザEloquentモデルへのメディアボックス関連付け
-     */
-    public function test_user_mediaBox_aggregation()
-    {
-        // 準備
-        config([MediaBox::CONFIG_KEY_USER_RELATION_TYPE => MediaBox::USER_RELATION_TYPE_AGGREGATION]);
-        $user = User::create([
-            'name' => 'テストユーザ',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password123'),
-        ]);
-        $this->actingAs($user);
-        MediaBox::factory()->create([
-            'user_id' => $user->id,
-        ]);
-        $this->assertDatabaseCount('media_boxes', 1);
-
-        // 実行
-        $user->delete();
-
-        // 評価
-        // ユーザEloquentモデルが削除された場合には、関連付けされた全てのメディアボックスは削除されないこと
-        $this->assertDatabaseCount('media_boxes', 1);
-        $this->assertDatabaseCount('users', 0);
+        $this->assertThrows(function () use ($mediaBox, $filePath) {
+            $mediaBox->upload($filePath);
+        }, ApplicationException::class, __('feeldee::messages.' . MediaBox::ERROR_CODE_MEDIA_BOX_UNSUPPORTED_MIME_TYPE));
     }
 
     /**
