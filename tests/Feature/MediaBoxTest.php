@@ -984,4 +984,69 @@ class MediaBoxTest extends TestCase
         ]);
         $this->assertEquals($url, $post->thumbnail, '値にメディアコンテンツが含まれない場合は、変換されないこと');
     }
+
+    /**
+     * メディアボックス使用率
+     * 
+     * - メディアボックス最大サイズに対するメディアボックス使用済サイズの割合をあらわすことを確認します。
+     * - 小数点下2桁以下が四捨五入されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックス使用率
+     */
+    public function test_mediaBox_usage_rate()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => 'mbox/123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $usage = $mediaBox->usage();
+
+        // 評価
+        $this->assertEquals(29.30, $usage, '小数点下2桁以下が四捨五入されること');
+    }
+
+    /**
+     * メディアボックス使用率
+     * 
+     * - precisionを指定することで変更することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックス使用率
+     */
+    public function test_mediaBox_usage_rate_precision()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => 'mbox/123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $usage = $mediaBox->usage(3);
+
+        // 評価
+        $this->assertEquals(29.297, $usage, 'precisionを指定することで変更することができること');
+    }
 }

@@ -365,6 +365,17 @@ class MediaBox extends Model
         return strval($value);
     }
 
+    /**
+     * 使用率（%）
+     * 
+     * @param integer $precision　精度
+     */
+    public function usage($precision = 2): float
+    {
+        $usage = ($this->used_size / $this->max_size) * 100;
+        return sprintf('%.' . $precision . 'f', $usage);
+    }
+
     // ========================== ここまで整理ずみ ==========================
 
     /**
@@ -397,17 +408,6 @@ class MediaBox extends Model
         $bytes = $bytes > 0 ? $bytes / pow(1024, floor($exp)) : $bytes;
         $bytes = sprintf('%.' . $precision . 'f', $bytes);
         return $sign . number_format($bytes) . ' ' . $unit;
-    }
-
-    /**
-     * 使用率（%）
-     * 
-     * @param integer $precision　精度
-     */
-    public function usage($precision = 2): float
-    {
-        $usage = ($this->size / ($this->maxSize * 1024 * 1024)) * 100;
-        return sprintf('%.' . $precision . 'f', $usage);
     }
 
     /**
