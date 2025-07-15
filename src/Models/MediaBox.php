@@ -106,11 +106,11 @@ class MediaBox extends Model
             }
         });
 
-        static::deleted(function (MediaBox $mediaBox) {
+        static::deleting(function (MediaBox $mediaBox) {
             // メディアボックスに紐づくメディアコンテンツを削除
-            $mediaBox->mediaContents()->each(function (MediaContent $medium) {
+            $mediaBox->mediaContents()->each(function (MediaContent $media) {
                 // メディアコンテンツ削除
-                $medium->delete();
+                $media->delete();
             });
             // ディレクトリ削除
             $mediaBox->deleteDirectory();
@@ -376,6 +376,16 @@ class MediaBox extends Model
         return sprintf('%.' . $precision . 'f', $usage);
     }
 
+    /**
+     * メディアボックスのディレクトリを削除します。
+     * 
+     * @return void
+     */
+    protected function deleteDirectory(): void
+    {
+        self::disk()->deleteDirectory($this->directory);
+    }
+
     // ========================== ここまで整理ずみ ==========================
 
     /**
@@ -405,16 +415,6 @@ class MediaBox extends Model
         }
 
         return $query->orderBy('uploaded_at', 'desc')->get();
-    }
-
-    /**
-     * ディレクトリを削除します。
-     * 
-     * @return void
-     */
-    public function deleteDirectory(): void
-    {
-        self::disk()->deleteDirectory($this->directory);
     }
 
     /**

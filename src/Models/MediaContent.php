@@ -74,6 +74,6 @@ class MediaContent extends Model
      */
     protected function deleteFile(): void
     {
-        self::disk()->delete($this->path);
+        $this->mediaBox->disk()->delete($this->path);
     }
 }

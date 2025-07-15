@@ -1049,4 +1049,41 @@ class MediaBoxTest extends TestCase
         // 評価
         $this->assertEquals(29.297, $usage, 'precisionを指定することで変更することができること');
     }
+
+    /**
+     * メディアボックス削除
+     * 
+     * - メディアボックスを削除できることを確認します。
+     * - メディアボックスディレクトリが削除されることを確認します。
+     * - メディアボックスに紐づくメディアコンテンツが削除されることを確認します。
+     */
+    public function test_mediaBox_delete()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => '123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $mediaBox->delete();
+
+        // 評価
+        $this->assertDatabaseMissing('media_boxes', [
+            'id' => $mediaBox->id,
+        ]);
+        $this->assertDatabaseMissing('media_contents', [
+            'media_box_id' => $mediaBox->id,
+        ]);
+        $this->assertTrue(!MediaBox::disk()->exists($mediaBox->directory));
+    }
 }
