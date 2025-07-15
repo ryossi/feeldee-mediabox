@@ -379,38 +379,6 @@ class MediaBox extends Model
     // ========================== ここまで整理ずみ ==========================
 
     /**
-     * 容量をフォーマットします。
-     * 
-     * @param integer $precision　精度
-     * @param array $units 単位配列
-     */
-    public function formatSize($precision = 2, array $units = null)
-    {
-        $bytes = $this->size;
-
-        if (abs($bytes) < 1024) {
-            $precision = 0;
-        }
-
-        if (is_array($units) === false) {
-            $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-        }
-
-        if ($bytes < 0) {
-            $sign = '-';
-            $bytes = abs($bytes);
-        } else {
-            $sign = '';
-        }
-
-        $exp   = floor(log($bytes) / log(1024));
-        $unit  = $units[$exp];
-        $bytes = $bytes > 0 ? $bytes / pow(1024, floor($exp)) : $bytes;
-        $bytes = sprintf('%.' . $precision . 'f', $bytes);
-        return $sign . number_format($bytes) . ' ' . $unit;
-    }
-
-    /**
      * メディアボックスからメディアリストを検索します。
      * メディアリストは、アップロード日時降順で取得します。
      * 

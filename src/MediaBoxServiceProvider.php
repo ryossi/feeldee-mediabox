@@ -41,6 +41,10 @@ class MediaBoxServiceProvider extends ServiceProvider
             'Image',
             \Feeldee\MediaBox\Facades\Image::class
         );
+        AliasLoader::getInstance()->alias(
+            'MediaBox',
+            \Feeldee\MediaBox\Facades\MediaBox::class
+        );
     }
 
     /**

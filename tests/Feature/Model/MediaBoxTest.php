@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Model;
 
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\Profile;
@@ -347,7 +347,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
         $filename = 'test.jpg';
         $subdirectory = 'uploads';
 
@@ -589,7 +589,7 @@ class MediaBoxTest extends TestCase
             'user_id' => $user->id,
             'max_size' => 1, // メディアボックス最大サイズを1MBに設定
         ]);
-        $filePath = __DIR__ . '/test_files/test_image_large.jpg'; // テスト用の大きな画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image_large.jpg'; // テスト用の大きな画像ファイルパス
 
         // 実行
         $this->assertThrows(function () use ($mediaBox, $filePath) {
@@ -624,7 +624,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
         $media = $mediaBox->upload($filePath);
@@ -666,7 +666,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
         Config::set(MediaBox::CONFIG_KEY_URI_SALT, 'app1');
