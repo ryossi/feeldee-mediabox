@@ -416,20 +416,4 @@ class MediaBox extends Model
 
         return $query->get();
     }
-
-    /**
-     * パスを指定してメディアを取得します。
-     * パスに一致するメディアが存在しない場合は、nullを返却します。
-     * 
-     * @param  ?string $path パス
-     * @return MediaContent|null メディアコンテンツまたはnull
-     */
-    public function find(?string $path): MediaContent|null
-    {
-        if (empty($path) || strpos($path, self::prefix()) === false) {
-            return null;
-        }
-        $basename = basename($path);
-        return $this->mediaContents()->uri($basename)->first();
-    }
 }

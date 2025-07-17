@@ -3,6 +3,7 @@
 namespace Feeldee\MediaBox\Models;
 
 use Feeldee\Framework\Models\SetUser;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -80,5 +81,26 @@ class MediaContent extends Model
     protected function deleteFile(): void
     {
         $this->mediaBox->disk()->delete($this->path);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 以降、ローカルクエリスコープ
+    |--------------------------------------------------------------------------
+    |
+    /**
+     * メディアコンテンツパスの条件を追加するクエリスコープ
+     *
+     * @param Builder $query
+     * @param string|null $path メディアコンテンツパス
+     */
+    public function scopeWherePath(Builder $query, ?string $path): void
+    {
+        if (!empty($path) && strpos($path, MediaBox::prefix()) !== false) {
+            $uri = basename($path);
+        } else {
+            $uri = $path;
+        }
+        $query->where('uri', $uri);
     }
 }
