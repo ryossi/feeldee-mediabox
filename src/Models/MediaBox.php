@@ -385,35 +385,4 @@ class MediaBox extends Model
     {
         self::disk()->deleteDirectory($this->directory);
     }
-
-    // ========================== ここまで整理ずみ ==========================
-
-    /**
-     * メディアボックスからメディアリストを検索します。
-     * メディアリストは、アップロード日時降順で取得します。
-     * 
-     * @param $filter フィルタ（条件式をカラム名=値&カラム名=値のように&で繋げて記述、条件式は=、>=、<=の3つが使用可能で全てAND条件）
-     * @return Collection コレクション
-     */
-    public function search($filter = ""): Collection
-    {
-        $query = $this->mediaContents();
-
-        // 条件式
-        $conditions = explode('&', $filter);
-        foreach ($conditions as $condition) {
-            if (false !== strpos($condition, '>=')) {
-                $where = explode('>=', $condition);
-                $query->where(trim($where[0]), '>=', rtrim(ltrim($where[1])));
-            } else if (false !== strpos($condition, '<=')) {
-                $where = explode('<=', $condition);
-                $query->where(trim($where[0]), '<=', rtrim(ltrim($where[1])));
-            } else if (false !== strpos($condition, '=')) {
-                $where = explode('=', $condition);
-                $query->where(trim($where[0]), '=', rtrim(ltrim($where[1])));
-            }
-        }
-
-        return $query->get();
-    }
 }
