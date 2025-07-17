@@ -414,7 +414,7 @@ class MediaBox extends Model
             }
         }
 
-        return $query->orderBy('uploaded_at', 'desc')->get();
+        return $query->get();
     }
 
     /**

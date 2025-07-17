@@ -27,6 +27,11 @@ class MediaContent extends Model
      */
     protected static function booted(): void
     {
+        // デフォルトの並び順は、メディアコンテンツアップロード日時降順
+        static::addGlobalScope('order_number', function ($builder) {
+            $builder->orderBy('uploaded_at', 'desc');
+        });
+
         static::deleted(function (MediaContent $media) {
             // メディアコンテンツファイル削除
             $media->deleteFile();
