@@ -5,7 +5,7 @@ namespace Feeldee\MediaBox\Services;
 use Intervention\Image\Facades\Image;
 
 /**
- * イメージユーティリティサービス
+ * イメージサービス
  */
 class ImageService
 {

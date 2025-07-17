@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Model;
 
 use Feeldee\Framework\Exceptions\ApplicationException;
 use Feeldee\Framework\Models\Profile;
@@ -347,7 +347,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
         $filename = 'test.jpg';
         $subdirectory = 'uploads';
 
@@ -589,7 +589,7 @@ class MediaBoxTest extends TestCase
             'user_id' => $user->id,
             'max_size' => 1, // メディアボックス最大サイズを1MBに設定
         ]);
-        $filePath = __DIR__ . '/test_files/test_image_large.jpg'; // テスト用の大きな画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image_large.jpg'; // テスト用の大きな画像ファイルパス
 
         // 実行
         $this->assertThrows(function () use ($mediaBox, $filePath) {
@@ -624,7 +624,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
         $media = $mediaBox->upload($filePath);
@@ -666,7 +666,7 @@ class MediaBoxTest extends TestCase
         $mediaBox = MediaBox::factory()->create([
             'user_id' => $user->id,
         ]);
-        $filePath = __DIR__ . '/test_files/test_image.jpg'; // テスト用の画像ファイルパス
+        $filePath = __DIR__ . '/../test_files/test_image.jpg'; // テスト用の画像ファイルパス
 
         // 実行
         Config::set(MediaBox::CONFIG_KEY_URI_SALT, 'app1');
@@ -983,5 +983,107 @@ class MediaBoxTest extends TestCase
             'thumbnail' => $path,
         ]);
         $this->assertEquals($url, $post->thumbnail, '値にメディアコンテンツが含まれない場合は、変換されないこと');
+    }
+
+    /**
+     * メディアボックス使用率
+     * 
+     * - メディアボックス最大サイズに対するメディアボックス使用済サイズの割合をあらわすことを確認します。
+     * - 小数点下2桁以下が四捨五入されることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックス使用率
+     */
+    public function test_mediaBox_usage_rate()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => 'mbox/123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $usage = $mediaBox->usage();
+
+        // 評価
+        $this->assertEquals(29.30, $usage, '小数点下2桁以下が四捨五入されること');
+    }
+
+    /**
+     * メディアボックス使用率
+     * 
+     * - precisionを指定することで変更することができることを確認します。
+     * 
+     * @link https://github.com/ryossi/feeldee-tracking/wiki/メディアボックス#メディアボックス使用率
+     */
+    public function test_mediaBox_usage_rate_precision()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => 'mbox/123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $usage = $mediaBox->usage(3);
+
+        // 評価
+        $this->assertEquals(29.297, $usage, 'precisionを指定することで変更することができること');
+    }
+
+    /**
+     * メディアボックス削除
+     * 
+     * - メディアボックスを削除できることを確認します。
+     * - メディアボックスディレクトリが削除されることを確認します。
+     * - メディアボックスに紐づくメディアコンテンツが削除されることを確認します。
+     */
+    public function test_mediaBox_delete()
+    {
+        // 準備
+        Auth::shouldReceive('id')->andReturn(1);
+        $mediaBox = MediaBox::create([
+            'user_id' => 1,
+            'directory' => '123',
+            'max_size' => 1024 * 1024 * 1024, // 1GB
+        ]);
+        $mediaBox->mediaContents()->create([
+            'media_box_id' => $mediaBox->id,
+            'filename' => 'sample.jpg',
+            'content_type' => 'image/jpeg',
+            'size' => 300 * 1024 * 1024, // 300MB
+            'uploaded_at' => now(),
+        ]);
+
+        // 実行
+        $mediaBox->delete();
+
+        // 評価
+        $this->assertDatabaseMissing('media_boxes', [
+            'id' => $mediaBox->id,
+        ]);
+        $this->assertDatabaseMissing('media_contents', [
+            'media_box_id' => $mediaBox->id,
+        ]);
+        $this->assertTrue(!MediaBox::disk()->exists($mediaBox->directory));
     }
 }

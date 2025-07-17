@@ -3,35 +3,19 @@
 namespace Feeldee\MediaBox\Models;
 
 use Feeldee\Framework\Models\SetUser;
-use Feeldee\MediaBox\Facades\Path;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaContent extends Model
 {
     use HasFactory, SetUser;
 
-    /**
-     * 複数代入可能な属性
-     *
-     * @var array
-     */
     protected $fillable = ['subdirectory', 'filename', 'size', 'width', 'height', 'content_type', 'uri', 'uploaded_at'];
 
-    /**
-     * 配列に追加する属性
-     * 
-     * @var array
-     */
     protected $appends = ['src'];
 
-    /**
-     * 配列に表示する属性
-     *
-     * @var array
-     */
     protected $visible = ['id', 'size', 'width', 'height', 'content_type', 'src', 'uploaded_at'];
 
     public static function create(array $attributes = [])
@@ -44,6 +28,11 @@ class MediaContent extends Model
      */
     protected static function booted(): void
     {
+        // デフォルトの並び順は、メディアコンテンツアップロード日時降順
+        static::addGlobalScope('order_number', function ($builder) {
+            $builder->orderBy('uploaded_at', 'desc');
+        });
+
         static::deleted(function (MediaContent $media) {
             // メディアコンテンツファイル削除
             $media->deleteFile();
@@ -91,63 +80,27 @@ class MediaContent extends Model
      */
     protected function deleteFile(): void
     {
-        self::disk()->delete($this->path);
+        $this->mediaBox->disk()->delete($this->path);
     }
 
-    // ========================== ここまで整理ずみ ==========================
-
+    /*
+    |--------------------------------------------------------------------------
+    | 以降、ローカルクエリスコープ
+    |--------------------------------------------------------------------------
+    |
     /**
-     * メディアファイルをダウンロードします。
-     * 
-     * @return StreamedResponse|null ファイルストリーム
-     */
-    public function downloadFile(): StreamedResponse
-    {
-        return self::disk()->download($this->path);
-    }
-
-    /**
-     * ファイル名とサブディレクトリで絞り込むクエリのスコープを設定
+     * メディアコンテンツパスの条件を追加するクエリスコープ
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param string $filename ファイル名
-     * @param ?string $subdirectory サブディレクトリ
-     * 
-     * @return void
+     * @param Builder $query
+     * @param string|null $path メディアコンテンツパス
      */
-    public function scopeFilename($query, string $filename, ?string $subdirectory = null)
+    public function scopeWherePath(Builder $query, ?string $path): void
     {
-        $query->where('filename', $filename);
-    }
-
-    /**
-     * サブディレクトリで絞り込むクエリのスコープを設定
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param ?string $subdirectory サブディレクトリ
-     * 
-     * @return void
-     */
-    public function scopeSubdirectory($query, ?string $subdirectory)
-    {
-        if (is_null($subdirectory)) {
-            $query->whereNull('subdirectory');
+        if (!empty($path) && strpos($path, MediaBox::prefix()) !== false) {
+            $uri = basename($path);
         } else {
-            $subdirectory = str_starts_with($subdirectory, '/') ? ltrim($subdirectory, '/') : $subdirectory;
-            $query->where('subdirectory', $subdirectory);
+            $uri = $path;
         }
-    }
-
-    /**
-     * サブディレクトリで絞り込むクエリのスコープを設定
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param ?string $subdirectory サブディレクトリ
-     * 
-     * @return void
-     */
-    public function scopeUri($query, string $uri)
-    {
         $query->where('uri', $uri);
     }
 }

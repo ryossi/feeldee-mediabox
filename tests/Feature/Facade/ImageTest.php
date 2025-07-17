@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Facade;
 
 use Tests\TestCase;
 
@@ -33,7 +33,7 @@ class ImageTest extends TestCase
     public function test_resize_file_path()
     {
         // 準備
-        $data = __DIR__ . '/test_files/test_image.jpg';
+        $data = __DIR__ . '/../test_files/test_image.jpg';
         $image = \Feeldee\MediaBox\Facades\Image::create($data);
         $this->assertEquals(120, $image->width());
         $this->assertEquals(120, $image->height());

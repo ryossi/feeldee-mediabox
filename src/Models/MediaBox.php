@@ -106,11 +106,11 @@ class MediaBox extends Model
             }
         });
 
-        static::deleted(function (MediaBox $mediaBox) {
+        static::deleting(function (MediaBox $mediaBox) {
             // メディアボックスに紐づくメディアコンテンツを削除
-            $mediaBox->mediaContents()->each(function (MediaContent $medium) {
+            $mediaBox->mediaContents()->each(function (MediaContent $media) {
                 // メディアコンテンツ削除
-                $medium->delete();
+                $media->delete();
             });
             // ディレクトリ削除
             $mediaBox->deleteDirectory();
@@ -365,40 +365,6 @@ class MediaBox extends Model
         return strval($value);
     }
 
-    // ========================== ここまで整理ずみ ==========================
-
-    /**
-     * 容量をフォーマットします。
-     * 
-     * @param integer $precision　精度
-     * @param array $units 単位配列
-     */
-    public function formatSize($precision = 2, array $units = null)
-    {
-        $bytes = $this->size;
-
-        if (abs($bytes) < 1024) {
-            $precision = 0;
-        }
-
-        if (is_array($units) === false) {
-            $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-        }
-
-        if ($bytes < 0) {
-            $sign = '-';
-            $bytes = abs($bytes);
-        } else {
-            $sign = '';
-        }
-
-        $exp   = floor(log($bytes) / log(1024));
-        $unit  = $units[$exp];
-        $bytes = $bytes > 0 ? $bytes / pow(1024, floor($exp)) : $bytes;
-        $bytes = sprintf('%.' . $precision . 'f', $bytes);
-        return $sign . number_format($bytes) . ' ' . $unit;
-    }
-
     /**
      * 使用率（%）
      * 
@@ -406,62 +372,17 @@ class MediaBox extends Model
      */
     public function usage($precision = 2): float
     {
-        $usage = ($this->size / ($this->maxSize * 1024 * 1024)) * 100;
+        $usage = ($this->used_size / $this->max_size) * 100;
         return sprintf('%.' . $precision . 'f', $usage);
     }
 
     /**
-     * メディアボックスからメディアリストを検索します。
-     * メディアリストは、アップロード日時降順で取得します。
-     * 
-     * @param $filter フィルタ（条件式をカラム名=値&カラム名=値のように&で繋げて記述、条件式は=、>=、<=の3つが使用可能で全てAND条件）
-     * @return Collection コレクション
-     */
-    public function search($filter = ""): Collection
-    {
-        $query = $this->mediaContents();
-
-        // 条件式
-        $conditions = explode('&', $filter);
-        foreach ($conditions as $condition) {
-            if (false !== strpos($condition, '>=')) {
-                $where = explode('>=', $condition);
-                $query->where(trim($where[0]), '>=', rtrim(ltrim($where[1])));
-            } else if (false !== strpos($condition, '<=')) {
-                $where = explode('<=', $condition);
-                $query->where(trim($where[0]), '<=', rtrim(ltrim($where[1])));
-            } else if (false !== strpos($condition, '=')) {
-                $where = explode('=', $condition);
-                $query->where(trim($where[0]), '=', rtrim(ltrim($where[1])));
-            }
-        }
-
-        return $query->orderBy('uploaded_at', 'desc')->get();
-    }
-
-    /**
-     * ディレクトリを削除します。
+     * メディアボックスのディレクトリを削除します。
      * 
      * @return void
      */
-    public function deleteDirectory(): void
+    protected function deleteDirectory(): void
     {
         self::disk()->deleteDirectory($this->directory);
-    }
-
-    /**
-     * パスを指定してメディアを取得します。
-     * パスに一致するメディアが存在しない場合は、nullを返却します。
-     * 
-     * @param  ?string $path パス
-     * @return MediaContent|null メディアコンテンツまたはnull
-     */
-    public function find(?string $path): MediaContent|null
-    {
-        if (empty($path) || strpos($path, self::prefix()) === false) {
-            return null;
-        }
-        $basename = basename($path);
-        return $this->mediaContents()->uri($basename)->first();
     }
 }
