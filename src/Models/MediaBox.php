@@ -130,17 +130,17 @@ class MediaBox extends Model
     }
 
     /**
-     * メディアボックス最大サイズ（MB単位）
+     * メディアボックス最大サイズ
      */
     protected function maxSize(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => is_null($value) ? config(self::CONFIG_KEY_MAX_SIZE) : $value,
+            get: fn($value) => is_null($value) ? config(self::CONFIG_KEY_MAX_SIZE, 100) * 1024 * 1024 : $value,
         );
     }
 
     /**
-     * メディアボックス使用済サイズ（バイト）
+     * メディアボックス使用済サイズ
      */
     protected function usedSize(): Attribute
     {
@@ -276,7 +276,7 @@ class MediaBox extends Model
         // メディアコンテンツサイズ
         try {
             $mediumContent->size = self::disk()->size($mediumContent->path);
-            if (($this->used_size + $mediumContent->size) > $this->max_size * 1024 * 1024) {
+            if (($this->used_size + $mediumContent->size) > $this->max_size) {
                 // メディアボックス使用済サイズとアップロードするコンテンツの合計がメディアボックス最大サイズ以上の場合
                 throw new ApplicationException(self::ERROR_CODE_MEDIA_BOX_SIZE_EXCEEDED, [
                     'used_size' => $this->used_size,
