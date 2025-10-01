@@ -2,6 +2,7 @@
 
 namespace Feeldee\MediaBox\Models;
 
+use Carbon\Carbon;
 use Feeldee\Framework\Models\SetUser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -83,13 +84,8 @@ class MediaContent extends Model
         $this->mediaBox->disk()->delete($this->path);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | 以降、ローカルクエリスコープ
-    |--------------------------------------------------------------------------
-    |
     /**
-     * メディアコンテンツパスの条件を追加するクエリスコープ
+     * メディアコンテンツパスの条件を追加するためのローカルスコープ
      *
      * @param Builder $query
      * @param string|null $path メディアコンテンツパス
@@ -102,5 +98,33 @@ class MediaContent extends Model
             $uri = $path;
         }
         $query->where('uri', $uri);
+    }
+
+    /**
+     * メディアコンテンツフィルタのためのローカルスコープ
+     * 
+     * @return \Illuminate\Database\Eloquent\Builder
+     * @param array|string|null $filters フィルタ条件
+     * @see https://github.com/ryossi/feeldee-mediabox/wiki/メディアコンテンツ#メディアコンテンツフィルタ
+     */
+    public function scopeFilter(Builder $query, array|string|null $filters): void
+    {
+        if (is_string($filters)) {
+            // 文字列の場合は、&で分割して配列に変換
+            $filters = array_map('trim', explode('&', $filters));
+        }
+        if (is_array($filters)) {
+            foreach ($filters as $filter) {
+                if (str_starts_with($filter, 'uploaded_at')) {
+                    // メディアコンテンツアップロード日時によるフィルタリング
+                    // セパレータ（>, <, >=, <=, =）を抽出
+                    if (preg_match('/uploaded_at(\>=|\<=|>|<|=)(.+)/', $filter, $matches)) {
+                        $operator = $matches[1];
+                        $uploaded_at = trim($matches[2], " \t\n\r\0\x0B'\"");
+                        $query->where('uploaded_at', $operator, Carbon::parse($uploaded_at));
+                    }
+                }
+            }
+        }
     }
 }
